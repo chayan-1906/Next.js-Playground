@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a [Next.js](https://nextjs.org) playground project for learning Next.js concepts.
 
-## Getting Started
+---
 
-First, run the development server:
+<details>
+<summary><strong>1. next/script</strong> - Optimized third-party script loading</summary>
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### Strategies
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Strategy            | When it loads                       | Use case                           |
+|---------------------|-------------------------------------|------------------------------------|
+| `beforeInteractive` | Before React hydrates               | Cookie consent, bot detection      |
+| `afterInteractive`  | After page is interactive (default) | Analytics, tag managers            |
+| `lazyOnload`        | During browser idle time            | Chat widgets, maps, social buttons |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Key Points
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `beforeInteractive` must be in root `layout.tsx`
+- Use `onLoad`/`onReady` for post-load initialization
+- External scripts only (Google Analytics, Maps, etc.)
 
-## Learn More
+### Demo: `http://localhost:3000/script-demo`
 
-To learn more about Next.js, take a look at the following resources:
+![next/script demo](https://github.com/user-attachments/assets/67f99d91-ab4f-40ea-83fa-9e415359a56f)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+[Official Docs](https://nextjs.org/docs/app/api-reference/components/script)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+</details>
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---

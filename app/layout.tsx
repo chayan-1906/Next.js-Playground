@@ -23,8 +23,80 @@ function RootLayout({children}: Readonly<{ children: React.ReactNode; }>) {
     return (
         <html lang={'en'}>
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {/* beforeInteractive: Loads BEFORE page hydration - must be in root layout */}
-        <Script src={'/scripts/before-interactive.js'} strategy={'beforeInteractive'} id={'before-interactive-script'}/>
+        {/*
+          beforeInteractive: Cookie Consent Banner
+          This is a REAL third-party library (cookieconsent by orestbida)
+          No account needed - completely free and open source
+          Must load before page hydration so users see consent before any tracking
+        */}
+        <Script
+            src={'https://cdn.jsdelivr.net/gh/orestbida/cookieconsent@3.0.1/dist/cookieconsent.umd.js'}
+            strategy={'beforeInteractive'}
+            id={'cookie-consent-script'}
+        />
+
+        {/* Cookie Consent CSS */}
+        <link rel={'stylesheet'} href="https://cdn.jsdelivr.net/gh/orestbida/cookieconsent@3.0.1/dist/cookieconsent.css"/>
+
+        {/* Initialize Cookie Consent after script loads */}
+        <Script id={'cookie-consent-init'} strategy={'afterInteractive'}>
+            {`
+                if (typeof CookieConsent !== 'undefined') {
+                    CookieConsent.run({
+                        guiOptions: {
+                            consentModal: {
+                                layout: 'box',
+                                position: 'bottom right'
+                            }
+                        },
+                        categories: {
+                            necessary: {
+                                enabled: true,
+                                readOnly: true
+                            },
+                            analytics: {
+                                enabled: false,
+                                readOnly: false
+                            }
+                        },
+                        language: {
+                            default: 'en',
+                            translations: {
+                                en: {
+                                    consentModal: {
+                                        title: 'We use cookies',
+                                        description: 'This is a demo of beforeInteractive strategy. Cookie consent must load before any tracking scripts.',
+                                        acceptAllBtn: 'Accept all',
+                                        acceptNecessaryBtn: 'Reject all',
+                                        showPreferencesBtn: 'Manage preferences'
+                                    },
+                                    preferencesModal: {
+                                        title: 'Cookie preferences',
+                                        acceptAllBtn: 'Accept all',
+                                        acceptNecessaryBtn: 'Reject all',
+                                        savePreferencesBtn: 'Save preferences',
+                                        sections: [
+                                            {
+                                                title: 'Necessary cookies',
+                                                description: 'These cookies are essential for the website to function.',
+                                                linkedCategory: 'necessary'
+                                            },
+                                            {
+                                                title: 'Analytics cookies',
+                                                description: 'These cookies help us understand how visitors use the website.',
+                                                linkedCategory: 'analytics'
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    console.log('[COOKIE CONSENT] Initialized successfully');
+                }
+            `}
+        </Script>
+
         {children}
         </body>
         </html>
