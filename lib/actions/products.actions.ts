@@ -1,5 +1,5 @@
 import {cache} from "react";
-import {cacheTag, revalidatePath, revalidateTag} from "next/cache";
+import {cacheTag, updateTag} from "next/cache";
 import {Product} from "@/types/products";
 
 /*async function getProducts(): Promise<{ products: Product[], cachedAt: string }> {
@@ -27,6 +27,8 @@ const getProducts = cache(async (): Promise<{ products: Product[], cachedAt: str
     "use cache";  // ← Put this back!
     cacheTag('products');  // ← Put this back!
 
+    await new Promise(resolve => setTimeout(resolve, 2000)); // ← 2s delay
+
     const cachedAt = new Date().toISOString();  // ← Works with "use cache"
     console.log('🔥 FETCHING FROM API at', cachedAt);
     const response = await fetch('https://dummyjson.com/products');
@@ -44,8 +46,9 @@ const getProducts = cache(async (): Promise<{ products: Product[], cachedAt: str
 async function revalidateProducts() {
     "use server";
     console.log('revalidating products...');
-    revalidateTag('products', 'max');    // not enough alone (without revalidatePath, invalidates cache but doesn't refresh page)
-    revalidatePath('/caching-demo');      // this is enough alone (without revalidateTag)
+    // revalidateTag('products', 'max');    // not enough alone (without revalidatePath, invalidates cache but doesn't refresh page)
+    // revalidatePath('/caching-demo');      // this is enough alone (without revalidateTag)
+    updateTag('products');
     console.log('revalidated products');
 }
 
