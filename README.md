@@ -48,31 +48,29 @@ This is a [Next.js](https://nextjs.org) playground project for learning Next.js 
 
 ```typescript
 // 1. Enable PPR in next.config.ts
-const nextConfig = {cacheComponents: true};
+const nextConfig = { cacheComponents: true };
 
 // 2. Cached function with tag
 const getData = cache(async () => {
-    "use cache";
-    cacheTag('products');
-    const cachedAt = new Date().toISOString(); // Observe caching
-    return await fetch(...);
+  "use cache";
+  cacheTag('products');
+  const cachedAt = new Date().toISOString(); // Observe caching
+  return await fetch(...);
 });
 
 // 3. Server Action for revalidation
 async function revalidate() {
-    "use server";
-    updateTag('products'); // Invalidates + refreshes (no revalidatePath needed!)
+  "use server";
+  updateTag('products'); // Invalidates + refreshes (no revalidatePath needed!)
 }
 
 // 4. Component structure with Suspense
 <div>
-    <Header / > {/* Static - instant */}
-< Suspense
-fallback = { < Loading / >
-}>
-<DynamicData / > {/* Streams at request time */}
-< /Suspense>
-< /div>
+  <Header/> {/* Static - instant */}
+  <Suspense fallback={<Loading/>}>
+    <DynamicData/> {/* Streams at request time */}
+  </Suspense>
+</div>
 ```
 
 ### Key Learnings
