@@ -1,55 +1,33 @@
-import {cache} from "react";
-import {cacheTag, updateTag} from "next/cache";
-import {Product} from "@/types/products";
+"use server";
 
-/*async function getProducts(): Promise<{ products: Product[], cachedAt: string }> {
-    "use cache";
-    cacheTag('products');
-    const cachedAt = new Date().toISOString();
-    console.log('🔥 FETCHING FROM API at', cachedAt);
-    const response = await fetch('https://dummyjson.com/products');
+import {ProductState} from "@/types/products";
 
-    if (!response.ok) {
-        throw new Error('Failed to fetch products');
+async function addProduct(prevState: ProductState, formData: FormData): Promise<ProductState> {
+    const title = formData.get('title') as string || '';
+    const price = formData.get('price') || 0;
+    const imageUrl = formData.get('imageUrl') as string || '';
+    const description = formData.get('description') as string || '';
+
+    console.log('product data from form:', {title, price, imageUrl, description});
+
+    const errors: Record<string, string> = {};
+    if (!title) errors.title = 'Title is required';
+    if (!price || Number(price) <= 0) errors.price = 'Price must be greater than 0';
+
+    if (Object.keys(errors).length > 0) {
+        return {
+            success: false,
+            error: errors,
+            data: {title, price: Number(price), images: [imageUrl], description},
+        };
     }
 
-    const data = await response.json();
-    const products: Product[] = data.products;
+    await new Promise(resolve => setTimeout(resolve, 5000));
 
-    // console.log('products:', products);
-    return {products, cachedAt};
-}*/
-
-/**
- * with "use cache" + fetch, cache() is redundant!
- */
-const getProducts = cache(async (): Promise<{ products: Product[], cachedAt: string }> => {
-    "use cache";  // ← Put this back!
-    cacheTag('products');  // ← Put this back!
-
-    await new Promise(resolve => setTimeout(resolve, 2000)); // ← 2s delay
-
-    const cachedAt = new Date().toISOString();  // ← Works with "use cache"
-    console.log('🔥 FETCHING FROM API at', cachedAt);
-    const response = await fetch('https://dummyjson.com/products');
-
-    if (!response.ok) {
-        throw new Error('Failed to fetch products');
-    }
-
-    const data = await response.json();
-    const products: Product[] = data.products;
-
-    return {products, cachedAt};
-});
-
-async function revalidateProducts() {
-    "use server";
-    console.log('revalidating products...');
-    // revalidateTag('products', 'max');    // not enough alone (without revalidatePath, invalidates cache but doesn't refresh page)
-    // revalidatePath('/caching-demo');      // this is enough alone (without revalidateTag)
-    updateTag('products');
-    console.log('revalidated products');
+    return {
+        success: true,
+        // data: {title, price: Number(price), images: [imageUrl], description},
+    };
 }
 
-export {getProducts, revalidateProducts};
+export {addProduct};

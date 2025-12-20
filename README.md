@@ -48,29 +48,31 @@ This is a [Next.js](https://nextjs.org) playground project for learning Next.js 
 
 ```typescript
 // 1. Enable PPR in next.config.ts
-const nextConfig = { cacheComponents: true };
+const nextConfig = {cacheComponents: true};
 
 // 2. Cached function with tag
 const getData = cache(async () => {
-  "use cache";
-  cacheTag('products');
-  const cachedAt = new Date().toISOString(); // Observe caching
-  return await fetch(...);
+    "use cache";
+    cacheTag('products');
+    const cachedAt = new Date().toISOString(); // Observe caching
+    return await fetch(...);
 });
 
 // 3. Server Action for revalidation
 async function revalidate() {
-  "use server";
-  updateTag('products'); // Invalidates + refreshes (no revalidatePath needed!)
+    "use server";
+    updateTag('products'); // Invalidates + refreshes (no revalidatePath needed!)
 }
 
 // 4. Component structure with Suspense
 <div>
-  <Header/> {/* Static - instant */}
-  <Suspense fallback={<Loading/>}>
-    <DynamicData/> {/* Streams at request time */}
-  </Suspense>
-</div>
+    <Header / > {/* Static - instant */}
+< Suspense
+fallback = { < Loading / >
+}>
+<DynamicData / > {/* Streams at request time */}
+< /Suspense>
+< /div>
 ```
 
 ### Key Learnings
@@ -109,6 +111,141 @@ async function revalidate() {
 ### Demo: `http://localhost:3000/caching-demo`
 
 [Official Docs - use cache](https://nextjs.org/docs/app/api-reference/directives/use-cache) | [updateTag](https://nextjs.org/docs/app/api-reference/functions/updateTag) | [Cache Components](https://nextjs.org/docs/app/getting-started/cache-components)
+
+</details>
+
+---
+
+<details>
+<summary><strong>3. useActionState</strong> - Form state management with Server Actions and pending states</summary>
+
+### Core Concepts
+
+| Feature          | Purpose                                         | Returns                               |
+|------------------|-------------------------------------------------|---------------------------------------|
+| `useActionState` | Manage Server Action state in Client Components | `[state, formAction, pending]`        |
+| `state`          | Current state returned from Server Action       | Success/error data for display        |
+| `formAction`     | Wrapped action function for form                | Pass to `<form action={formAction}>`  |
+| `pending`        | Boolean indicating submission in progress       | Use for loading indicators/disable UI |
+| `prevState`      | Previous state passed to Server Action          | First parameter in Server Action      |
+
+### Recommended Setup
+
+```typescript
+// 1. Server Action (in separate file with "use server" at top)
+// lib/actions/myActions.ts
+"use server";
+
+import {FormState} from "@/types";
+import {useActionState, useEffect, useRef} from "react";
+import {addProduct} from "@/lib/actions/myActions";
+import {error} from "next/dist/build/output/log";
+
+export async function addProduct(prevState: FormState, formData: FormData): Promise<FormState> {
+    const title = formData.get('title') as string || '';
+    const price = formData.get('price') || 0;
+
+    // Validate fields
+    const errors: Record<string, string> = {};
+    if (!title) errors.title = 'Title is required';
+    if (!price || Number(price) <= 0) errors.price = 'Price must be greater than 0';
+
+    // Return errors with submitted data (so form can repopulate on error)
+    if (Object.keys(errors).length > 0) {
+        return {
+            success: false,
+            error: errors,
+            data: {title, price: Number(price)},
+        };
+    }
+
+    // Simulate async work (e.g., API call)
+    await new Promise(resolve => setTimeout(resolve, 5000));
+
+    // Return success (no data needed - form will reset)
+    return {success: true};
+}
+
+// 2. Client Component using useActionState
+"use client";
+
+function MyForm() {
+    const formRef = useRef<HTMLFormElement>(null);
+    const initialState = {success: false};
+    const [state, formAction, pending] = useActionState(addProduct, initialState);
+
+    // Reset form on success
+    useEffect(() => {
+        if (state.success && formRef.current) {
+            formRef.current.reset();
+        }
+    }, [state.success]);
+
+    return (
+        <form ref = {formRef}
+    action = {formAction} >
+    <input
+        name = "title"
+    defaultValue = {state.data?.title || ''}
+    required
+    / >
+    {
+        state.error?.title && <p>{state.error.title} < /p>}
+
+            < button type = "submit" disabled = {pending} >
+            {pending ? 'Submitting...' : 'Submit'}
+            < /button>
+
+    {
+        state.success && <p>Success! < /p>}
+        < /form>
+    )
+        ;
+    }
+```
+
+### Key Learnings
+
+**✅ What Works:**
+
+- **Uncontrolled inputs** - No `useState` needed! Form manages its own state
+- **`action` prop** - Use `<form action={formAction}>`, NOT `onSubmit`
+- **Field-specific errors** - Return `error: { title: '...', price: '...' }` for per-field validation
+- **`defaultValue` for repopulation** - Use `defaultValue={state.data?.field || ''}` to keep values on error
+- **File-level `"use server"`** - More reliable than inline when imported by Client Components
+- **Separate files by directive** - `lib/actions/` for "use server", `lib/queries/` for "use cache"
+
+**⚠️ Common Gotchas:**
+
+- **`prevState` is required** - Server Actions used with `useActionState` MUST have `(prevState, formData)` signature
+- **`pending` only works with `useActionState`** - Direct Server Action usage doesn't give you pending state
+- **Form resets automatically** - Default browser behavior after submission
+- **`defaultValue` vs `value`** - `defaultValue` sets initial value; changing it doesn't update controlled inputs
+- **Can't mix directives** - Don't put "use cache" and "use server" in the same file imported by Client Components
+- **Inline "use server" works, but...** - File-level `"use server"` is clearer and more reliable for Client Component imports
+- **Validation runs server-side** - If validation fails before async work, pending state is very brief (just network roundtrip)
+
+**🎯 Form Reset Behavior:**
+
+| Scenario  | What to return from Server Action | Form behavior                        |
+|-----------|-----------------------------------|--------------------------------------|
+| ✅ Success | `{ success: true }` (no data)     | Clears (defaultValue is empty)       |
+| ❌ Error   | `{ success: false, error, data }` | Keeps values (defaultValue has data) |
+
+**📊 useActionState vs Traditional Forms:**
+
+| Traditional React Form            | useActionState Pattern                    |
+|-----------------------------------|-------------------------------------------|
+| `useState` for form data          | Uncontrolled inputs (no state)            |
+| `onChange` handlers               | No onChange needed                        |
+| `onSubmit` + `e.preventDefault()` | `action={formAction}` (no preventDefault) |
+| Manual loading state (`useState`) | `pending` from `useActionState`           |
+| Manual error state                | `state.error` from Server Action          |
+| Client-side validation            | Server-side validation                    |
+
+### Demo: `http://localhost:3000/action-state-demo`
+
+[Official Docs](https://nextjs.org/docs/app/getting-started/error-handling#functions)
 
 </details>
 
