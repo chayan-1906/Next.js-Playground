@@ -1,7 +1,9 @@
 const routes = {
     scriptDemo: '/script-demo',
     cachingDemo: '/caching-demo',
-    actionStateDemo: '/action-state-demo',
+    clientActionStateDemo: '/action-state-demo/client-only',
+    serverActionStateDemo: '/action-state-demo/server-only',
+    serverClientHybridActionStateDemo: '/action-state-demo/server-client-hybrid',
 };
 
 export {routes};

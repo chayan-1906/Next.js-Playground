@@ -117,17 +117,18 @@ fallback = { < Loading / >
 ---
 
 <details>
-<summary><strong>3. useActionState</strong> - Form state management with Server Actions and pending states</summary>
+<summary><strong>3. Server Actions & Forms</strong> - Three approaches: Client Component, Server Component, and Hybrid</summary>
 
 ### Core Concepts
 
-| Feature          | Purpose                                         | Returns                               |
+| Feature          | Purpose                                         | Returns/Usage                         |
 |------------------|-------------------------------------------------|---------------------------------------|
 | `useActionState` | Manage Server Action state in Client Components | `[state, formAction, pending]`        |
 | `state`          | Current state returned from Server Action       | Success/error data for display        |
 | `formAction`     | Wrapped action function for form                | Pass to `<form action={formAction}>`  |
 | `pending`        | Boolean indicating submission in progress       | Use for loading indicators/disable UI |
 | `prevState`      | Previous state passed to Server Action          | First parameter in Server Action      |
+| `useFormStatus`  | Get form status in Client Component             | `{ pending, data, method, action }`   |
 
 ### Recommended Setup
 
@@ -204,6 +205,90 @@ function MyForm() {
     }
 ```
 
+### Three Approaches to Forms
+
+**Approach 1: Client Component with `useActionState` (Full features)**
+
+```tsx
+"use client";
+import { useActionState } from "react";
+
+// Server Action signature: (prevState, formData) => Promise<State>
+export async function addProduct(prevState: State, formData: FormData): Promise<State> {
+  // Returns state object with success/error/data
+  return { success: true };
+}
+
+function Form() {
+  const [state, formAction, pending] = useActionState(addProduct, initialState);
+  return (
+    <form action={formAction}>
+      <input name="title" defaultValue={state.data?.title || ''} />
+      {state.error?.title && <p>{state.error.title}</p>}
+      <button disabled={pending}>{pending ? 'Submitting...' : 'Submit'}</button>
+      {state.success && <p>Success!</p>}
+    </form>
+  );
+}
+```
+
+**Approach 2: Server Component (Pure server, no feedback)**
+
+```tsx
+// No "use client" - Server Component by default
+
+// Server Action signature: (formData) => Promise<void>
+export async function addProductServerForm(formData: FormData) {
+  "use server";
+  // Can't return state to Server Component
+  // Use redirect() for feedback
+}
+
+function Form() {
+  return (
+    <form action={addProductServerForm}>
+      <input name="title" />
+      {/* ❌ No pending state */}
+      {/* ❌ No error display */}
+      {/* ❌ No success message */}
+      <button>Submit</button>
+    </form>
+  );
+}
+```
+
+**Approach 3: Hybrid (Server Component + Client button with `useFormStatus`)**
+
+```tsx
+// Button.tsx - Client Component
+"use client";
+import { useFormStatus } from "react-dom";
+
+export function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button disabled={pending}>
+      {pending ? 'Submitting...' : 'Submit'}
+    </button>
+  );
+}
+
+// page.tsx - Server Component
+import { SubmitButton } from "./Button";
+
+function Form() {
+  return (
+    <form action={addProductServerForm}>
+      <input name="title" />
+      {/* ✅ Has pending state */}
+      {/* ❌ No error display */}
+      {/* ❌ No success message */}
+      <SubmitButton />
+    </form>
+  );
+}
+```
+
 ### Key Learnings
 
 **✅ What Works:**
@@ -217,13 +302,17 @@ function MyForm() {
 
 **⚠️ Common Gotchas:**
 
+- **Server Action signatures differ!**
+  - `useActionState`: `(prevState, formData) => Promise<State>` (returns state object)
+  - Direct form action: `(formData) => Promise<void>` (returns void or redirects)
 - **`prevState` is required** - Server Actions used with `useActionState` MUST have `(prevState, formData)` signature
-- **`pending` only works with `useActionState`** - Direct Server Action usage doesn't give you pending state
+- **`useFormStatus` limitations** - Only gives `pending` state, NOT errors/success from Server Action
 - **Form resets automatically** - Default browser behavior after submission
 - **`defaultValue` vs `value`** - `defaultValue` sets initial value; changing it doesn't update controlled inputs
 - **Can't mix directives** - Don't put "use cache" and "use server" in the same file imported by Client Components
 - **Inline "use server" works, but...** - File-level `"use server"` is clearer and more reliable for Client Component imports
 - **Validation runs server-side** - If validation fails before async work, pending state is very brief (just network roundtrip)
+- **Server Components can't show Server Action return values** - Use `redirect()` or URL params for feedback
 
 **🎯 Form Reset Behavior:**
 
@@ -232,18 +321,24 @@ function MyForm() {
 | ✅ Success | `{ success: true }` (no data)     | Clears (defaultValue is empty)       |
 | ❌ Error   | `{ success: false, error, data }` | Keeps values (defaultValue has data) |
 
-**📊 useActionState vs Traditional Forms:**
+**📊 Three Approaches Compared:**
 
-| Traditional React Form            | useActionState Pattern                    |
-|-----------------------------------|-------------------------------------------|
-| `useState` for form data          | Uncontrolled inputs (no state)            |
-| `onChange` handlers               | No onChange needed                        |
-| `onSubmit` + `e.preventDefault()` | `action={formAction}` (no preventDefault) |
-| Manual loading state (`useState`) | `pending` from `useActionState`           |
-| Manual error state                | `state.error` from Server Action          |
-| Client-side validation            | Server-side validation                    |
+| Feature | Client (useActionState) | Server (Pure) | Hybrid (useFormStatus) |
+|---------|------------------------|---------------|------------------------|
+| **Component Type** | Client Component | Server Component | Server + Client button |
+| **Pending State** | ✅ Yes | ❌ No | ✅ Yes |
+| **Error Messages** | ✅ Yes | ❌ No | ❌ No |
+| **Success Messages** | ✅ Yes | ❌ No | ❌ No |
+| **Form Repopulation** | ✅ Yes | ❌ No | ❌ No |
+| **Server Action Signature** | `(prevState, formData) => Promise<State>` | `(formData) => Promise<void>` | `(formData) => Promise<void>` |
+| **Complexity** | High | Low | Medium |
+| **When to Use** | Forms with validation feedback | Simple forms, no feedback needed | Forms where you only need pending state |
 
-### Demo: `http://localhost:3000/action-state-demo`
+### Demos
+
+- Client Component: `http://localhost:3000/client-action-state-demo`
+- Server Component: `http://localhost:3000/server-action-state-demo`
+- Hybrid: `http://localhost:3000/action-state-demo/server-client-hybrid`
 
 [Official Docs](https://nextjs.org/docs/app/getting-started/error-handling#functions)
 
