@@ -1,5 +1,5 @@
 import {Suspense} from "react";
-import {getProducts, revalidateProducts} from "@/lib/actions/products.actions";
+import {getProducts, revalidateProducts} from "@/lib/queries/products.queries";
 
 async function CachingDemo() {
     return (

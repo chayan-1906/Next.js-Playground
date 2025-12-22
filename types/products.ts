@@ -37,3 +37,12 @@ export interface Product {
     images: string[];
     thumbnail: string;
 }
+
+export interface ProductState {
+    success: boolean;
+    data?: Partial<Product>;
+    error?: {
+        title?: string;
+        price?: string;
+    };
+}
