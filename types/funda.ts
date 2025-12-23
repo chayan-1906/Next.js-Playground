@@ -102,3 +102,8 @@ export interface FundaPersonPageProps {
 export interface PersonDetailsProps {
     personId: string;
 }
+
+export interface FundaErrorProps {
+    error: Error & { digest?: string };
+    reset: () => void;
+}
