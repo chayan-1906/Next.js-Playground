@@ -2,7 +2,7 @@ import Image from "next/image";
 import {CompanyCardProps} from "@/types/funda";
 
 function CompanyCard({company}: CompanyCardProps) {
-    const {name, picture, headquarters, linkedIn} = company || {};
+    const {_rmx_id: companyId, name, picture, headquarters, linkedIn} = company || {};
 
     return (
         <div className={'rounded-2xl bg-white shadow-md hover:shadow-lg transition-shadow overflow-hidden p-5'}>

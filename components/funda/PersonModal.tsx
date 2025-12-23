@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
 import {useEffect} from "react";
+import {ArrowUpRight} from "lucide-react";
+import {routes} from "@/lib/routes";
 import {FundaEducation, FundaSkill, PersonModalProps} from "@/types/funda";
 
 function PersonModal({person, onClose}: PersonModalProps) {
-    const {name, title, about, address, picture, company, summary, education, skills, linkedIn} = person || {};
+    const {_rmx_id: personId, name, title, about, address, picture, company, summary, education, skills, linkedIn} = person || {};
 
     // Close on escape key
     useEffect(() => {
@@ -51,9 +54,16 @@ function PersonModal({person, onClose}: PersonModalProps) {
                             )}
                         </div>
                         <div className={'flex-1 min-w-0 pr-8'}>
-                            <h2 className={'text-2xl font-bold text-gray-900'}>
-                                {name}
-                            </h2>
+                            <div className={'flex items-center gap-2'}>
+                                <h2 className={'text-2xl font-bold text-gray-900'}>
+                                    {name}
+                                </h2>
+                                <Link
+                                    href={routes.fundaPerson(personId._rmx_value)}
+                                    className={'size-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors'}>
+                                    <ArrowUpRight className={'size-4'}/>
+                                </Link>
+                            </div>
                             <p className={'text-indigo-600 font-medium'}>
                                 {title}
                             </p>

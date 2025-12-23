@@ -1,17 +1,17 @@
 import {cache} from "react";
 import {cacheTag} from "next/cache";
-import {FundaApiResponse, FundaCompany, FundaPerson} from "@/types/funda";
+import {FundaApiResponse, FundaCompany, FundaPerson, FundaRelationship, FundaRelationshipProps} from "@/types/funda";
 
-const FUNDA_API_URL = "https://agt.remixlabs.com/run-agent/sEt2qxPydL/dbp-db/agents/search_funda";
+const FUNDA_API_URL = "https://agt.remixlabs.com/run-agent/sEt2qxPydL/dbp-db/agents";
 
 const getFundaPeople = cache(async (): Promise<{ people: FundaPerson[]; cachedAt: string }> => {
         "use cache";
         cacheTag('funda-people');
 
-        const cachedAt = new Date().toISOString();
+        const cachedAt: string = new Date().toISOString();
         console.log('🔥 FETCHING FUNDA PEOPLE at', cachedAt);
 
-        const response = await fetch(FUNDA_API_URL, {
+        const response: Response = await fetch(`${FUNDA_API_URL}/search_funda`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -24,7 +24,7 @@ const getFundaPeople = cache(async (): Promise<{ people: FundaPerson[]; cachedAt
         }
 
         const data: FundaApiResponse<FundaPerson> = await response.json();
-        const people = data._rmx_value.filtered_data;
+        const people: FundaPerson[] = data._rmx_value.filtered_data;
 
         return {people, cachedAt};
     }
@@ -34,10 +34,10 @@ const getFundaCompanies = cache(async (): Promise<{ companies: FundaCompany[]; c
         "use cache";
         cacheTag('funda-companies');
 
-        const cachedAt = new Date().toISOString();
+        const cachedAt: string = new Date().toISOString();
         console.log('🔥 FETCHING FUNDA COMPANIES at', cachedAt);
 
-        const response = await fetch(FUNDA_API_URL, {
+        const response: Response = await fetch(`${FUNDA_API_URL}/search_funda`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -50,10 +50,40 @@ const getFundaCompanies = cache(async (): Promise<{ companies: FundaCompany[]; c
         }
 
         const data: FundaApiResponse<FundaCompany> = await response.json();
-        const companies = data._rmx_value.filtered_data;
+        const companies: FundaCompany[] = data._rmx_value.filtered_data;
 
         return {companies, cachedAt};
     }
 );
 
-export {getFundaPeople, getFundaCompanies};
+const getFundaRelationships = cache(async ({personId, companyId}: FundaRelationshipProps): Promise<{ relationships: FundaRelationship[]; cachedAt: string }> => {
+        "use cache";
+        cacheTag('funda-relationships');
+
+        const cachedAt: string = new Date().toISOString();
+        console.log('🔥 FETCHING FUNDA RELATIONSHIPS at', cachedAt);
+
+        if ((!personId && !companyId) || (personId && companyId)) {
+            throw new Error('Either personId or companyId is required, neither both nor none');
+        }
+
+        const response: Response = await fetch(`${FUNDA_API_URL}/cloud_query_filter_funda`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({from: [personId], to: [companyId], entity: 'relationship'}),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch relationships');
+        }
+
+        const data: FundaApiResponse<FundaRelationship> = await response.json();
+        const relationships: FundaRelationship[] = data.filtered_data;
+
+        return {relationships, cachedAt};
+    }
+);
+
+export {getFundaPeople, getFundaCompanies, getFundaRelationships};

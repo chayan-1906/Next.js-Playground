@@ -7,6 +7,8 @@ const routes = {
     funda: '/funda',
     fundaPeople: '/funda/people',
     fundaCompanies: '/funda/companies',
+    fundaPerson: (personId: string) => `/funda/people/${personId}`,
+    fundaCompany: (companyId: string) => `/funda/companies/${companyId}`,
 };
 
 export {routes};
