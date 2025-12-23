@@ -4,6 +4,9 @@ const routes = {
     clientActionStateDemo: '/action-state-demo/client-only',
     serverActionStateDemo: '/action-state-demo/server-only',
     serverClientHybridActionStateDemo: '/action-state-demo/server-client-hybrid',
+    funda: '/funda',
+    fundaPeople: '/funda/people',
+    fundaCompanies: '/funda/companies',
 };
 
 export {routes};
