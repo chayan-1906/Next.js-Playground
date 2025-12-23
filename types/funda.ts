@@ -29,7 +29,7 @@ export interface FundaPerson {
     email: string;
     entity: 'person';
     isTestMode: boolean;
-    linkedIn: string;
+    linkedin: string;
     name: string;
     person_identifier: string;
     phone: string;
@@ -47,7 +47,7 @@ export interface FundaCompany {
     isTestMode: boolean;
     name: string;
     picture: string;
-    linkedIn: string;
+    linkedin: string;
 }
 
 export interface FundaRelationship {
@@ -87,6 +87,11 @@ export interface CompanyCardProps {
 
 export interface PersonModalProps {
     person: FundaPerson;
+    onClose: () => void;
+}
+
+export interface CompanyModalProps {
+    company: FundaCompany;
     onClose: () => void;
 }
 

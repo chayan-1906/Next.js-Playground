@@ -7,10 +7,10 @@ async function FundaPeoplePage() {
         <div className={'flex flex-col max-w-7xl mx-auto p-6 gap-6'}>
             <div className={'flex justify-between items-center'}>
                 <div>
-                    <h1 className={'text-3xl font-bold text-gray-900'}>
+                    <h1 className={'text-3xl font-bold text-gray-900 dark:text-white'}>
                         People
                     </h1>
-                    <p className={'mt-1 text-gray-500'}>
+                    <p className={'mt-1 text-gray-500 dark:text-gray-400'}>
                         Linked profile data
                     </p>
                 </div>
