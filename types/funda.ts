@@ -48,6 +48,21 @@ export interface FundaCompany {
     name: string;
     picture: string;
     linkedin: string;
+    company_size?: string;
+    founded?: string;
+    industry?: string;
+    overview?: string;
+    phone?: string;
+    specialties?: string;
+    website?: string;
+}
+
+export interface FundaRelationshipMetadata {
+    title?: string;
+    description?: string;
+    duration?: string;
+    name?: string;
+    relationship_type?: string;
 }
 
 export interface FundaRelationship {
@@ -56,7 +71,7 @@ export interface FundaRelationship {
     from: RMX_ID;
     from_entity: string;
     from_obj: FundaPerson;
-    metadata: {};
+    metadata: FundaRelationshipMetadata;
     to_entity: string;
     to: RMX_ID;
     to_obj: FundaCompany;
@@ -101,6 +116,14 @@ export interface FundaPersonPageProps {
 
 export interface PersonDetailsProps {
     personId: string;
+}
+
+export interface CompanyDetailsProps {
+    companyId: string;
+}
+
+export interface FundaCompanyPageProps {
+    params: Promise<{ companyId: string }>;
 }
 
 export interface FundaErrorProps {

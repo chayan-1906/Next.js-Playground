@@ -1,15 +1,13 @@
 import {Suspense} from "react";
 import {FundaPersonPageProps} from "@/types/funda";
 import {PersonDetails} from "@/components/funda/PersonDetails";
+import {PersonDetailsSkeleton} from "@/components/funda/PersonDetailsSkeleton";
 
-async function FundaPerson({params}:FundaPersonPageProps) {
+async function FundaPerson({params}: FundaPersonPageProps) {
     return (
-        <div>
-            <h1>Funda Person</h1>
-            <Suspense fallback={<p>PersonDetailsSkeleton...</p>}>
-                <PersonWrapper params={params}/>
-            </Suspense>
-        </div>
+        <Suspense fallback={<PersonDetailsSkeleton/>}>
+            <PersonWrapper params={params}/>
+        </Suspense>
     );
 }
 

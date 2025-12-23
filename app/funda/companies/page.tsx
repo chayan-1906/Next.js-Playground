@@ -7,10 +7,10 @@ async function FundaCompaniesPage() {
         <div className={'max-w-7xl mx-auto flex flex-col p-6 gap-6'}>
             <div className={'flex justify-between items-center'}>
                 <div>
-                    <h1 className={'text-3xl font-bold text-gray-900'}>
+                    <h1 className={'text-3xl font-bold text-gray-900 dark:text-white'}>
                         {'Companies'}
                     </h1>
-                    <p className={'mt-1 text-gray-500'}>
+                    <p className={'mt-1 text-gray-500 dark:text-gray-400'}>
                         {'Linked company data'}
                     </p>
                 </div>

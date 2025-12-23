@@ -16,7 +16,7 @@ const getFundaPeople = cache(async (): Promise<{ people: FundaPerson[]; cachedAt
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({entity: 'person'}),
+            body: JSON.stringify({n: 500, entity: 'person'}),
         });
 
         if (!response.ok) {
@@ -42,7 +42,7 @@ const getFundaCompanies = cache(async (): Promise<{ companies: FundaCompany[]; c
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({entity: 'company'}),
+            body: JSON.stringify({n: 1000, entity: 'company'}),
         });
 
         if (!response.ok) {

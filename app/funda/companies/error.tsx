@@ -10,17 +10,6 @@ function FundaCompaniesError({error, reset}: FundaErrorProps) {
 
     return (
         <div className={'max-w-7xl mx-auto flex flex-col p-6 gap-6'}>
-            <div className={'flex justify-between items-center'}>
-                <div>
-                    <h1 className={'text-3xl font-bold text-gray-900 dark:text-white'}>
-                        Companies
-                    </h1>
-                    <p className={'mt-1 text-gray-500 dark:text-gray-400'}>
-                        Linked company data
-                    </p>
-                </div>
-            </div>
-
             <div className={'flex flex-col items-center justify-center min-h-[50vh] text-center'}>
                 <div className={'size-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center'}>
                     <span className={'text-4xl'}>{'⚠️'}</span>
