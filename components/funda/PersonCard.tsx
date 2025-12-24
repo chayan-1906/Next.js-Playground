@@ -7,7 +7,7 @@ import {PersonModal} from "./PersonModal";
 import {PersonCardProps} from "@/types/funda";
 
 function PersonCard({person}: PersonCardProps) {
-    const {name, title, address, picture, company, linkedin} = person || {};
+    const {_rmx_id: personId, name, title, address, picture, company, linkedin} = person || {};
 
     const [isModalOpen, setIsModalOpen] = useState(false);
 

@@ -25,7 +25,8 @@ function FundaCompaniesError({error, reset}: FundaErrorProps) {
                         Error ID: {error.digest}
                     </p>
                 )}
-                <button onClick={reset} className={'px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors cursor-pointer'}>
+                <button onClick={reset}
+                        className={'px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors cursor-pointer'}>
                     {'Try again'}
                 </button>
             </div>

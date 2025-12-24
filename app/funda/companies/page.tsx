@@ -1,11 +1,13 @@
 import {Suspense} from "react";
-import {CompaniesList} from "@/components/funda/CompaniesList";
+import {SearchInput} from "@/components/funda/SearchInput";
+import {FundaCompaniesPageSearchParams} from "@/types/funda";
+import {CompaniesListWrapper} from "@/components/funda/CompaniesListWrapper";
 import {CompaniesListSkeleton} from "@/components/funda/CompaniesListSkeleton";
 
-async function FundaCompaniesPage() {
+function FundaCompaniesPage({searchParams}: FundaCompaniesPageSearchParams) {
     return (
         <div className={'max-w-7xl mx-auto flex flex-col p-6 gap-6'}>
-            <div className={'flex justify-between items-center'}>
+            <div className={'flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'}>
                 <div>
                     <h1 className={'text-3xl font-bold text-gray-900 dark:text-white'}>
                         {'Companies'}
@@ -14,10 +16,15 @@ async function FundaCompaniesPage() {
                         {'Linked company data'}
                     </p>
                 </div>
+                <div className={'w-full sm:w-72'}>
+                    <Suspense fallback={<div className={'h-10 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse'}/>}>
+                        <SearchInput placeholder={'Search companies...'}/>
+                    </Suspense>
+                </div>
             </div>
 
             <Suspense fallback={<CompaniesListSkeleton/>}>
-                <CompaniesList/>
+                <CompaniesListWrapper searchParams={searchParams}/>
             </Suspense>
         </div>
     );

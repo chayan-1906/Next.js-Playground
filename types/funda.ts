@@ -142,3 +142,11 @@ export interface PeopleListProps {
 export interface FundaPeoplePageSearchParams {
     searchParams: Promise<{ q?: string }>;
 }
+
+export interface CompaniesListProps {
+    searchTerm?: string;
+}
+
+export interface FundaCompaniesPageSearchParams {
+    searchParams: Promise<{ q?: string }>;
+}

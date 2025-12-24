@@ -1,9 +1,9 @@
 import {CompanyCard} from "./CompanyCard";
-import {FundaCompany} from "@/types/funda";
+import {CompaniesListProps, FundaCompany} from "@/types/funda";
 import {getFundaCompanies} from "@/lib/queries/funda.queries";
 
-async function CompaniesList() {
-    const {companies, cachedAt} = await getFundaCompanies();
+async function CompaniesList({searchTerm = ''}: CompaniesListProps) {
+    const {companies, cachedAt} = await getFundaCompanies(searchTerm);
 
     return (
         <div>
