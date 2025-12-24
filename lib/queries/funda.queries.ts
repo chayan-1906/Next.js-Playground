@@ -4,19 +4,19 @@ import {FundaApiResponse, FundaCompany, FundaPerson, FundaRelationship, FundaRel
 
 const FUNDA_API_URL = "https://agt.remixlabs.com/run-agent/sEt2qxPydL/dbp-db/agents";
 
-const getFundaPeople = cache(async (): Promise<{ people: FundaPerson[]; cachedAt: string }> => {
+const getFundaPeople = cache(async (searchTerm: string = ''): Promise<{ people: FundaPerson[]; cachedAt: string }> => {
         "use cache";
         cacheTag('funda-people');
 
         const cachedAt: string = new Date().toISOString();
-        console.log('🔥 FETCHING FUNDA PEOPLE at', cachedAt);
+        console.log('🔥 FETCHING FUNDA PEOPLE at', cachedAt, 'searchTerm:', searchTerm);
 
         const response: Response = await fetch(`${FUNDA_API_URL}/search_funda`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({n: 500, entity: 'person'}),
+            body: JSON.stringify({n: 500, searchTerm, entity: 'person'}),
         });
 
         if (!response.ok) {
@@ -30,7 +30,7 @@ const getFundaPeople = cache(async (): Promise<{ people: FundaPerson[]; cachedAt
     }
 );
 
-const getFundaCompanies = cache(async (): Promise<{ companies: FundaCompany[]; cachedAt: string }> => {
+const getFundaCompanies = cache(async (searchTerm: string = ''): Promise<{ companies: FundaCompany[]; cachedAt: string }> => {
         "use cache";
         cacheTag('funda-companies');
 
@@ -42,7 +42,7 @@ const getFundaCompanies = cache(async (): Promise<{ companies: FundaCompany[]; c
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({n: 1000, entity: 'company'}),
+            body: JSON.stringify({n: 1000, searchTerm, entity: 'company'}),
         });
 
         if (!response.ok) {

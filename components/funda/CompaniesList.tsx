@@ -8,11 +8,11 @@ async function CompaniesList() {
     return (
         <div>
             <p className={'text-xs text-gray-400 dark:text-gray-500 mb-4'}>
-                Cached at: ${cachedAt}
+                Cached at: {cachedAt}
             </p>
             <div className={'grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}>
-                {companies.map((company: FundaCompany) => (
-                    <CompanyCard key={company.company_identifier} company={company}/>
+                {companies.map((company: FundaCompany, index: number) => (
+                    <CompanyCard key={index} company={company}/>
                 ))}
             </div>
         </div>

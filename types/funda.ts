@@ -130,3 +130,15 @@ export interface FundaErrorProps {
     error: Error & { digest?: string };
     reset: () => void;
 }
+
+export interface SearchInputProps {
+    placeholder?: string;
+}
+
+export interface PeopleListProps {
+    searchTerm?: string;
+}
+
+export interface FundaPeoplePageSearchParams {
+    searchParams: Promise<{ q?: string }>;
+}

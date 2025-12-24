@@ -25,7 +25,7 @@ async function ProductList() {
     return (
         <div>
             <p className={'text-sm text-gray-500 mb-4'}>
-                Cached at: ${cachedAt}
+                Cached at: {cachedAt}
             </p>
             <div className={'grid gap-6 sm:grid-cols-2 lg:grid-cols-3'}>
                 {products.map(({id, title, description, thumbnail, images, brand, price, stock, availabilityStatus, rating}) => {
