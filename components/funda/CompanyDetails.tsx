@@ -1,9 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import {FaLinkedin} from "react-icons/fa6";
 import {ArrowLeft, Globe} from "lucide-react";
 import {routes} from "@/lib/routes";
 import {PersonListItem} from "./PersonListItem";
+import {FallbackImage} from "@/components/funda/FallbackImage";
 import {getFundaRelationships} from "@/lib/queries/funda.queries";
 import {CompanyDetailsProps, FundaCompany, FundaRelationship} from "@/types/funda";
 
@@ -16,7 +16,7 @@ async function CompanyDetails({companyId}: CompanyDetailsProps) {
         throw new Error('Company not found');
     }
 
-    const {name, picture, headquarters, linkedin, company_size, founded, industry, overview, phone, specialties, website} = company;
+    const {company_identifier, name, picture, headquarters, linkedin, company_size, founded, industry, overview, phone, specialties, website} = company;
 
     return (
         <div className={'flex flex-col max-w-5xl mx-auto p-6 gap-6'}>
@@ -37,7 +37,11 @@ async function CompanyDetails({companyId}: CompanyDetailsProps) {
                     {/* Company Logo */}
                     <div className={'shrink-0'}>
                         {picture ? (
-                            <Image src={picture} alt={name} width={120} height={120} className={'rounded-lg object-cover border-4 border-gray-100 dark:border-gray-700'}/>
+                            <FallbackImage src={picture} alt={name} width={120} height={120} errorComponent={
+                                <div className={'size-30 rounded-lg bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-5xl font-bold'}>
+                                    {name.charAt(0)}
+                                </div>
+                            } className={'rounded-lg object-cover border-4 border-gray-100 dark:border-gray-700'}/>
                         ) : (
                             <div className={'size-30 rounded-lg bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-5xl font-bold'}>
                                 {name.charAt(0)}

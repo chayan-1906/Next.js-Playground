@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import {FaLinkedin} from "react-icons/fa6";
 import {routes} from "@/lib/routes";
 import {PersonListItemProps} from "@/types/funda";
+import {FallbackImage} from "@/components/funda/FallbackImage";
 
 function PersonListItem({person}: PersonListItemProps) {
     const {_rmx_id: personId, name: personName, picture: personPicture, linkedin: personLinkedin, title: currentTitle, company: currentCompany, address} = person;
@@ -15,7 +15,11 @@ function PersonListItem({person}: PersonListItemProps) {
             {/* Profile Picture */}
             <div className={'shrink-0'}>
                 {personPicture ? (
-                    <Image src={personPicture} alt={personName} width={56} height={56} className={'rounded-full object-cover border border-gray-100 dark:border-gray-700'}/>
+                    <FallbackImage src={personPicture} alt={personName} width={56} height={56} errorComponent={
+                        <div className={'size-14 rounded-full bg-linear-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-3xl font-bold'}>
+                            {personName.charAt(0)}
+                        </div>
+                    } className={'rounded-full object-cover border border-gray-100 dark:border-gray-700'}/>
                 ) : (
                     <div className={'size-14 rounded-full bg-linear-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-3xl font-bold'}>
                         {personName.charAt(0)}

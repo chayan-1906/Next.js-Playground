@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import {FaLinkedin} from "react-icons/fa6";
 import {routes} from "@/lib/routes";
 import {CompanyListItemProps} from "@/types/funda";
+import {FallbackImage} from "@/components/funda/FallbackImage";
 
 function CompanyListItem({company, metadata}: CompanyListItemProps) {
     const {_rmx_id: companyId, name: companyName, picture: companyPicture, linkedin: companyLinkedin} = company;
@@ -16,7 +16,11 @@ function CompanyListItem({company, metadata}: CompanyListItemProps) {
             {/* Company Logo */}
             <div className={'shrink-0'}>
                 {companyPicture ? (
-                    <Image src={companyPicture} alt={companyName} width={56} height={56} className={'rounded-lg object-cover border border-gray-100 dark:border-gray-700'}/>
+                    <FallbackImage src={companyPicture} alt={companyName} width={56} height={56} errorComponent={
+                        <div className={'size-14 rounded-lg bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-2xl font-bold'}>
+                            {companyName.charAt(0)}
+                        </div>
+                    } className={'rounded-lg object-cover border border-gray-100 dark:border-gray-700'}/>
                 ) : (
                     <div className={'size-14 rounded-lg bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-2xl font-bold'}>
                         {companyName.charAt(0)}

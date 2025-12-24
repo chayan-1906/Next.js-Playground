@@ -50,7 +50,10 @@ const getFundaCompanies = cache(async (searchTerm: string = ''): Promise<{ compa
         }
 
         const data: FundaApiResponse<FundaCompany> = await response.json();
-        const companies: FundaCompany[] = data._rmx_value.filtered_data;
+        const companies: FundaCompany[] = data._rmx_value.filtered_data.map((company: FundaCompany) => ({
+            ...company,
+            linkedin: company.linkedin || `https://www.linkedin.com/company/${company.company_identifier}`,
+        }));
 
         return {companies, cachedAt};
     }
@@ -80,7 +83,13 @@ const getFundaRelationships = cache(async ({personId, companyId}: FundaRelations
         }
 
         const data: FundaApiResponse<FundaRelationship> = await response.json();
-        const relationships: FundaRelationship[] = data.filtered_data;
+        const relationships: FundaRelationship[] = data.filtered_data.map((relationship: FundaRelationship) => ({
+            ...relationship,
+            to_obj: {
+                ...relationship.to_obj,
+                linkedin: relationship.to_obj.linkedin || `https://www.linkedin.com/company/${relationship.to_obj.company_identifier}`,
+            },
+        }));
 
         return {relationships, cachedAt};
     }

@@ -1,3 +1,6 @@
+import React from "react";
+import {ImageProps} from "next/image";
+
 export interface RMX_ID {
     _rmx_type: string;
     _rmx_value: string;
@@ -158,4 +161,9 @@ export interface PersonListItemProps {
 export interface CompanyListItemProps {
     company: FundaCompany;
     metadata?: FundaRelationshipMetadata;
+}
+
+export interface FallbackImageProps extends Omit<ImageProps, 'src'> {
+    src: string | null | undefined;
+    errorComponent: React.ReactElement;
 }

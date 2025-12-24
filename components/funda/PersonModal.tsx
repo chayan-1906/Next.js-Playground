@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import {useEffect} from "react";
 import {ArrowUpRight} from "lucide-react";
 import {FaLinkedin} from "react-icons/fa6";
 import {routes} from "@/lib/routes";
 import {FundaEducation, FundaSkill, PersonModalProps} from "@/types/funda";
+import {FallbackImage} from "@/components/funda/FallbackImage";
 
 function PersonModal({person, onClose}: PersonModalProps) {
     const {_rmx_id: personId, name, title, about, address, picture, company, summary, education, skills, linkedin} = person || {};
@@ -47,7 +47,11 @@ function PersonModal({person, onClose}: PersonModalProps) {
                     <div className={'flex items-start gap-4 mb-6'}>
                         <div className={'shrink-0'}>
                             {picture ? (
-                                <Image src={picture} alt={name} width={80} height={80} className={'rounded-full object-cover border-2 border-gray-100 dark:border-gray-700'}/>
+                                <FallbackImage src={picture} alt={name} width={80} height={80} errorComponent={
+                                    <div className={'size-20 rounded-full bg-linear-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-5xl font-bold'}>
+                                        {name.charAt(0)}
+                                    </div>
+                                } className={'rounded-full object-cover border-2 border-gray-100 dark:border-gray-700'}/>
                             ) : (
                                 <div className={'size-20 rounded-full bg-linear-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-5xl font-bold'}>
                                     {name.charAt(0)}
@@ -134,7 +138,11 @@ function PersonModal({person, onClose}: PersonModalProps) {
                                 {education.map((edu: FundaEducation, index: number) => (
                                     <div key={index} className={'flex items-start gap-3'}>
                                         {edu.picture ? (
-                                            <Image src={edu.picture} alt={edu.institute} width={40} height={40} className={'rounded object-cover shrink-0'}/>
+                                            <FallbackImage src={edu.picture} alt={edu.institute} width={40} height={40} errorComponent={
+                                                <div className={'size-10 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0'}>
+                                                    <span className={'text-gray-400 dark:text-gray-500'}>{'🎓'}</span>
+                                                </div>
+                                            } className={'rounded object-cover shrink-0'}/>
                                         ) : (
                                             <div className={'size-10 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0'}>
                                                 <span className={'text-gray-400 dark:text-gray-500'}>{'🎓'}</span>

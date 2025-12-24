@@ -1,10 +1,10 @@
 "use client";
 
 import {useState} from "react";
-import Image from "next/image";
 import {FaLinkedin} from "react-icons/fa6";
 import {CompanyModal} from "./CompanyModal";
 import {CompanyCardProps} from "@/types/funda";
+import {FallbackImage} from "@/components/funda/FallbackImage";
 
 function CompanyCard({company}: CompanyCardProps) {
     const {_rmx_id: companyId, name, picture, headquarters, linkedin} = company || {};
@@ -28,7 +28,11 @@ function CompanyCard({company}: CompanyCardProps) {
                     {/* Company Logo */}
                     <div className={'shrink-0'}>
                         {picture ? (
-                            <Image src={picture} alt={name} width={56} height={56} className={'rounded-lg object-cover border border-gray-100 dark:border-gray-700'}/>
+                            <FallbackImage src={picture} alt={name} width={56} height={56} errorComponent={
+                                <div className={'size-16 rounded-xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-3xl font-bold'}>
+                                    {name.charAt(0)}
+                                </div>
+                            } className={'rounded-lg object-cover border border-gray-100 dark:border-gray-700'}/>
                         ) : (
                             <div className={'size-16 rounded-xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-3xl font-bold'}>
                                 {name.charAt(0)}

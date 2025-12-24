@@ -1,10 +1,10 @@
 "use client";
 
 import {useState} from "react";
-import Image from "next/image";
 import {FaLinkedin} from "react-icons/fa6";
 import {PersonModal} from "./PersonModal";
 import {PersonCardProps} from "@/types/funda";
+import {FallbackImage} from "@/components/funda/FallbackImage";
 
 function PersonCard({person}: PersonCardProps) {
     const {_rmx_id: personId, name, title, address, picture, company, linkedin} = person || {};
@@ -27,7 +27,11 @@ function PersonCard({person}: PersonCardProps) {
                     {/* Profile Picture */}
                     <div className={'shrink-0'}>
                         {picture ? (
-                            <Image src={picture} alt={name} width={64} height={64} className={'rounded-full object-cover border-2 border-gray-100 dark:border-gray-700'}/>
+                            <FallbackImage src={picture} alt={name} width={64} height={64} errorComponent={
+                                <div className={'size-16 rounded-full bg-linear-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-3xl font-bold'}>
+                                    {name.charAt(0)}
+                                </div>
+                            } className={'rounded-full object-cover border-2 border-gray-100 dark:border-gray-700'}/>
                         ) : (
                             <div className={'size-16 rounded-full bg-linear-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-3xl font-bold'}>
                                 {name.charAt(0)}

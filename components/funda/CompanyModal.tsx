@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import {useEffect} from "react";
 import {ArrowUpRight} from "lucide-react";
 import {FaLinkedin} from "react-icons/fa6";
 import {routes} from "@/lib/routes";
 import {CompanyModalProps} from "@/types/funda";
+import {FallbackImage} from "@/components/funda/FallbackImage";
 
 function CompanyModal({company, onClose}: CompanyModalProps) {
     const {_rmx_id: companyId, name, picture, headquarters, linkedin} = company || {};
@@ -48,7 +48,11 @@ function CompanyModal({company, onClose}: CompanyModalProps) {
                         {/* Company Logo */}
                         <div className={'shrink-0'}>
                             {picture ? (
-                                <Image src={picture} alt={name} width={100} height={100} className={'rounded-2xl object-cover border-2 border-gray-100 dark:border-gray-700'}/>
+                                <FallbackImage src={picture} alt={name} width={100} height={100} errorComponent={
+                                    <div className={'size-24 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-5xl font-bold'}>
+                                        {name.charAt(0)}
+                                    </div>
+                                } className={'rounded-2xl object-cover border-2 border-gray-100 dark:border-gray-700'}/>
                             ) : (
                                 <div className={'size-24 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-5xl font-bold'}>
                                     {name.charAt(0)}

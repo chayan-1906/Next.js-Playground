@@ -1,11 +1,11 @@
 import Link from "next/link";
-import Image from "next/image";
 import {ArrowLeft} from "lucide-react";
 import {FaLinkedin} from "react-icons/fa6";
 import {routes} from "@/lib/routes";
 import {CompanyListItem} from "./CompanyListItem";
 import {getFundaRelationships} from "@/lib/queries/funda.queries";
 import {FundaEducation, FundaPerson, FundaRelationship, FundaSkill, PersonDetailsProps} from "@/types/funda";
+import {FallbackImage} from "@/components/funda/FallbackImage";
 
 async function PersonDetails({personId}: PersonDetailsProps) {
     const {relationships, cachedAt} = await getFundaRelationships({personId});
@@ -37,7 +37,11 @@ async function PersonDetails({personId}: PersonDetailsProps) {
                     {/* Profile Picture */}
                     <div className={'shrink-0'}>
                         {picture ? (
-                            <Image src={picture} alt={name} width={120} height={120} className={'rounded-full object-cover border-4 border-gray-100 dark:border-gray-700'}/>
+                            <FallbackImage src={picture} alt={name} width={120} height={120} errorComponent={
+                                <div className={'size-30 rounded-full bg-linear-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-5xl font-bold'}>
+                                    {name.charAt(0)}
+                                </div>
+                            } className={'rounded-full object-cover border-4 border-gray-100 dark:border-gray-700'}/>
                         ) : (
                             <div className={'size-30 rounded-full bg-linear-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-5xl font-bold'}>
                                 {name.charAt(0)}
@@ -124,7 +128,11 @@ async function PersonDetails({personId}: PersonDetailsProps) {
                             {education.map((edu: FundaEducation, index: number) => (
                                 <div key={index} className={'flex items-start gap-4'}>
                                     {edu.picture ? (
-                                        <Image src={edu.picture} alt={edu.institute} width={48} height={48} className={'rounded object-cover shrink-0'}/>
+                                        <FallbackImage src={edu.picture} alt={edu.institute} width={48} height={48} errorComponent={
+                                            <div className={'size-12 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0'}>
+                                                <span className={'text-gray-400 dark:text-gray-500'}>{'🎓'}</span>
+                                            </div>
+                                        } className={'rounded object-cover shrink-0'}/>
                                     ) : (
                                         <div className={'size-12 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0'}>
                                             <span className={'text-gray-400 dark:text-gray-500'}>{'🎓'}</span>
