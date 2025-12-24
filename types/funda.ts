@@ -150,3 +150,12 @@ export interface CompaniesListProps {
 export interface FundaCompaniesPageSearchParams {
     searchParams: Promise<{ q?: string }>;
 }
+
+export interface PersonListItemProps {
+    person: FundaPerson;
+}
+
+export interface CompanyListItemProps {
+    company: FundaCompany;
+    metadata?: FundaRelationshipMetadata;
+}
