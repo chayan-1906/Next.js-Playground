@@ -27,6 +27,10 @@ function Home() {
                     <button className={'w-full px-4 py-3 rounded-xl bg-amber-600 hover:bg-amber-800 transition text-white font-medium cursor-pointer'}>Server Client Hybrid Action State Demo</button>
                 </Link>
 
+                <Link href={routes.transitionsDemo} className={'block'}>
+                    <button className={'w-full px-4 py-3 rounded-xl bg-sky-600 hover:bg-sky-800 transition text-white font-medium cursor-pointer'}>Transitions Demo</button>
+                </Link>
+
                 <Link href={routes.funda} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-sky-600 hover:bg-sky-800 transition text-white font-medium cursor-pointer'}>FUNDA</button>
                 </Link>
