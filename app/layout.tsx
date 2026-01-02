@@ -15,6 +15,8 @@ export const metadata: Metadata = {
 };
 
 function RootLayout({children}: Readonly<{ children: React.ReactNode; }>) {
+    // throw new Error('Root layout error!');
+
     return (
         <html lang={'en'}>
         <body className={`${robotoSerif.variable} antialiased`}>
