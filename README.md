@@ -345,3 +345,385 @@ function Form() {
 </details>
 
 ---
+
+<details>
+<summary><strong>4. useTransition</strong> - Keep UI responsive during expensive state updates</summary>
+
+### Core Concepts
+
+| Feature | Purpose | Returns | Usage |
+|---------|---------|---------|-------|
+| `useTransition` | Mark state updates as non-urgent | `[isPending, startTransition]` | Keep UI responsive during slow updates |
+| `isPending` | Indicates if transition is in progress | `boolean` | Show loading indicators |
+| `startTransition` | Wrap slow state updates | `(callback) => void` | Updates inside won't block UI |
+
+### The Problem Without Transitions
+
+```tsx
+"use client";
+function WithoutTransition() {
+  const [filteredList, setFilteredList] = useState(items); // 10,000 items
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);           // ⚠️ UI BLOCKS here
+    setFilteredList(                         // Expensive filtering (300ms+)
+      items.filter(item => item.name.includes(e.target.value))
+    );
+  };
+
+  return (
+    <div>
+      <input value={searchTerm} onChange={handleSearch} />
+      {/* Input feels laggy - can't type smoothly! */}
+      {filteredList.map(item => <div>{item.name}</div>)}
+    </div>
+  );
+}
+```
+
+**Result:** Input field lags/stutters because React blocks to render 10,000 items on every keystroke.
+
+### The Solution With Transitions
+
+```tsx
+"use client";
+import { useTransition } from "react";
+
+function WithTransition() {
+  const [filteredList, setFilteredList] = useState(items);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isPending, startTransition] = useTransition();
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);          // ✅ Updates immediately (urgent)
+
+    startTransition(() => {                 // ✅ Non-blocking (non-urgent)
+      setFilteredList(                      // Expensive filtering happens in background
+        items.filter(item => item.name.includes(e.target.value))
+      );
+    });
+  };
+
+  return (
+    <div>
+      <input value={searchTerm} onChange={handleSearch} />
+      {/* Input stays responsive! */}
+      {isPending && <div>Filtering...</div>}
+      {filteredList.map(item => <div>{item.name}</div>)}
+    </div>
+  );
+}
+```
+
+**Result:** Input field stays smooth! Filter results update slightly delayed but UI never blocks.
+
+### Key Learnings
+
+**✅ What Works:**
+
+- **Separate urgent from non-urgent updates** - Input state (urgent) vs filtered results (non-urgent)
+- **`startTransition` keeps UI responsive** - Expensive updates don't block user input
+- **`isPending` for loading states** - Show "Filtering..." or skeleton UI
+- **Works with any expensive computation** - Filtering large lists, complex calculations, heavy renders
+- **No async needed** - `startTransition` is for synchronous expensive updates
+
+**⚠️ Common Gotchas:**
+
+- **Don't wrap controlled input state** - `setSearchTerm` should NOT be in `startTransition` (needs immediate update)
+- **Only for non-urgent updates** - If user expects immediate feedback, don't use transitions
+- **Not for async operations** - `startTransition` callback must be synchronous (can't use `async/await`)
+- **State updates only** - Can't wrap side effects like `fetch` directly
+- **Multiple state updates in one transition** - All updates inside `startTransition` are treated as one transition
+
+**🎯 When to Use Transitions:**
+
+| Scenario | Use Transition? | Why |
+|----------|----------------|-----|
+| Search filtering 10,000+ items | ✅ Yes | Keeps input responsive while filtering |
+| Tab switching with heavy content | ✅ Yes | Old tab stays visible while new tab loads |
+| Sorting/paginating large datasets | ✅ Yes | UI doesn't freeze during re-render |
+| Simple form input | ❌ No | Input should respond immediately |
+| Navigation/routing | ❌ No | Next.js handles this automatically |
+| Async data fetching | ❌ No | Use Suspense + Server Components instead |
+
+**📊 With vs Without Transitions:**
+
+| Aspect | Without Transition | With Transition |
+|--------|-------------------|-----------------|
+| **Input responsiveness** | ❌ Blocks/lags | ✅ Smooth/instant |
+| **Update timing** | Immediate (but janky) | Slightly delayed (but smooth) |
+| **User experience** | Feels slow | Feels fast |
+| **Loading indicator** | Hard to show | ✅ `isPending` available |
+| **Code complexity** | Simple | Slightly more complex |
+
+**🔄 How It Works Internally:**
+
+```tsx
+// Without transition (blocking)
+User types "a" → setSearchTerm("a") → setFilteredList (300ms) → Re-render → UI updates
+                                     ↑ User is blocked here! Can't type next character
+
+// With transition (non-blocking)
+User types "a" → setSearchTerm("a") → Re-render input immediately → User can type next character
+                                   → startTransition → setFilteredList (300ms, in background)
+                                                    → Re-render list when ready
+```
+
+**💡 Mental Model:**
+
+Think of transitions like putting a task in the background:
+- **Urgent:** "User is typing, update input NOW!"
+- **Non-urgent:** "Filter results when you get a chance, but don't block the user"
+
+React prioritizes urgent updates over non-urgent ones, keeping UI responsive.
+
+**🎓 Common Confusion Points:**
+
+1. **"Can I use async/await in startTransition?"**
+   - ❌ No! The callback must be synchronous
+   - For async operations, use Suspense or manual loading states
+
+2. **"Should I wrap my fetch() in startTransition?"**
+   - ❌ No! Transitions are for synchronous expensive state updates
+   - Fetch is async - use Suspense + Server Components instead
+
+3. **"Why is my input state inside startTransition not updating?"**
+   - Transitions deprioritize updates - controlled inputs need immediate updates
+   - Move `setSearchTerm` OUTSIDE `startTransition`
+
+4. **"What's the difference between isPending and loading state?"**
+   - `isPending`: Automatically true when transition is active
+   - `loading`: Manual state you control (for async operations)
+
+### Demo: `http://localhost:3000/transitions-demo`
+
+**Try it yourself:**
+- Type in the **left input (Without Transition)** - Notice the lag/jank
+- Type in the **right input (With Transition)** - Feels smooth!
+- Both filter 10,000 items with 300ms simulated delay
+
+[Official Docs](https://react.dev/reference/react/useTransition)
+
+</details>
+
+---
+
+<details>
+<summary><strong>5. Error Handling (error.tsx, global-error.tsx)</strong> - Error boundaries, client vs server errors, and async error handling</summary>
+
+### Core Concepts
+
+| Feature | Purpose | Placement | Must Include |
+|---------|---------|-----------|--------------|
+| `error.tsx` | Route-level error boundary | `app/[route]/error.tsx` | `"use client"` directive |
+| `global-error.tsx` | Root layout error boundary | `app/global-error.tsx` | `"use client"`, `<html>`, `<body>` |
+| `error` prop | Error object from boundary | Both files | `Error` type with `.message` |
+| `reset()` prop | Re-render error boundary children | Both files | Resets component state to initial |
+
+### Error Boundary Scope
+
+```
+app/layout.tsx                    ← global-error.tsx catches this
+  └── app/error-demo/layout.tsx   ← error.tsx CANNOT catch this!
+      └── app/error-demo/page.tsx ← error.tsx catches this ✓
+```
+
+**Key Rule:** error.tsx catches errors in its children, but NOT in layout.tsx at the same level.
+
+### What Error Boundaries Catch
+
+| Error Type | Caught by error.tsx? | How to Test |
+|------------|---------------------|-------------|
+| **Rendering errors** (Server/Client) | ✅ Yes | `throw new Error()` in component body |
+| **Event handler errors** | ❌ No | `onClick={() => throw Error()}` - won't work! |
+| **Async errors in event handlers** | ❌ No | `onClick={async () => { await fetch() }}` - won't work! |
+
+### Recommended Setup
+
+```typescript
+// 1. error.tsx - Route-level error boundary
+"use client";
+
+export default function Error({ error, reset }: { error: Error; reset: () => void }) {
+  return (
+    <div>
+      <h1>Something went wrong!</h1>
+      <p>{error.message}</p>
+      <button onClick={reset}>Try Again</button>
+    </div>
+  );
+}
+
+// 2. global-error.tsx - Root layout error boundary
+"use client";
+
+export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
+  return (
+    <html lang="en">
+      <body>
+        <div>
+          <h1>Application Error</h1>
+          <p>{error.message}</p>
+          <button onClick={reset}>Try Again</button>
+        </div>
+      </body>
+    </html>
+  );
+}
+
+// 3. Triggering errors during render (works with error boundaries)
+
+// Server Component - async error
+async function ServerComponent() {
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  throw new Error("Server error!"); // ✅ Caught by error.tsx
+  return <div>Won't render</div>;
+}
+
+// Client Component - state-based error
+"use client";
+function ClientComponent() {
+  const [shouldError, setShouldError] = useState(false);
+
+  if (shouldError) {
+    throw new Error("Client error!"); // ✅ Caught by error.tsx
+  }
+
+  return <button onClick={() => setShouldError(true)}>Trigger Error</button>;
+}
+
+// 4. Async errors in event handlers (requires manual handling)
+"use client";
+function AsyncErrorComponent() {
+  const [shouldError, setShouldError] = useState(false);
+
+  // Error thrown during render - caught by error boundary
+  if (shouldError) {
+    throw new Error("Async fetch failed!");
+  }
+
+  const handleClick = async () => {
+    const response = await fetch('/api/data');
+    if (!response.ok) {
+      setShouldError(true); // Triggers re-render that throws
+    } else {
+      const data = await response.json();
+    }
+  };
+
+  return <button onClick={handleClick}>Fetch Data</button>;
+}
+```
+
+### Key Learnings
+
+**✅ What Works:**
+
+- **error.tsx must be Client Component** - Needs interactivity (reset button) and React error boundaries
+- **loading.tsx is Server Component** - Just static UI, no interactivity needed (they're opposites!)
+- **Rendering errors are caught** - Both server and client component errors during render
+- **State-based pattern for event handlers** - Set state in onClick, throw during render
+- **reset() resets state** - Unmounts and remounts components with fresh initial state
+- **global-error.tsx needs `<html>` and `<body>`** - Replaces root layout when active
+- **Server errors reach client boundaries** - Next.js serializes server errors and sends to client error.tsx
+
+**⚠️ Common Gotchas:**
+
+- **❌ WRONG ASSUMPTION: "Client Component errors aren't caught"**
+  - Reality: error.tsx catches BOTH client and server component errors
+  - The key is WHEN the error happens (rendering vs event handler), NOT WHERE (client vs server)
+- **Event handler errors NOT caught** - `onClick={() => throw Error()}` bypasses error boundary
+- **Async errors in event handlers NOT caught** - Need manual try/catch or state pattern
+- **error.tsx can't catch same-level layout.tsx** - Error boundaries only catch children, not siblings
+- **global-error.tsx only shows in production** - Dev mode shows Next.js error overlay instead
+- **Don't throw directly in page.tsx for testing** - Page will always error! Use conditional (searchParams, state)
+- **setState doesn't stop function execution** - After `setShouldError(true)`, code continues! Use `return` or `else`
+- **reset() with unconditional errors creates loop** - If error always happens during render, reset triggers same error
+
+**🎯 Client vs Server - The Real Distinction:**
+
+| Aspect | Client Component | Server Component |
+|--------|------------------|------------------|
+| **Can be async?** | ❌ No | ✅ Yes |
+| **Errors during render caught?** | ✅ Yes | ✅ Yes |
+| **Event handler errors caught?** | ❌ No | N/A (no event handlers) |
+| **Execution location** | Browser | Server (then serialized to client) |
+
+**🔄 How reset() Works:**
+
+```tsx
+// Before reset
+<ErrorBoundary>
+  <ComponentWithError shouldError={true} /> {/* Has error state */}
+</ErrorBoundary>
+
+// After clicking reset
+<ErrorBoundary>
+  <ComponentWithError shouldError={false} /> {/* Fresh instance! */}
+</ErrorBoundary>
+```
+
+1. Unmounts errored component
+2. Remounts with initial state
+3. If error condition still exists → errors again immediately!
+
+**📊 Error Boundaries vs Try/Catch:**
+
+| Error Type | Handle With | Why |
+|------------|-------------|-----|
+| Rendering errors | error.tsx | React error boundaries designed for this |
+| Event handler errors | Try/catch or state pattern | Error boundaries don't catch these |
+| Async errors in events | Try/catch or state pattern | Outside render phase |
+| Server Action errors | Server Action return value | Can't use error boundaries |
+
+**🎓 Common Confusion Points:**
+
+1. **"Why doesn't my onClick error show error.tsx?"**
+   - Event handlers run AFTER rendering, outside error boundary scope
+   - Solution: Use state to trigger a render error
+
+2. **"Why do I see red overlay instead of global-error.tsx?"**
+   - Development mode prioritizes debugging
+   - Production shows your custom error UI
+
+3. **"When does global-error.tsx actually activate?"**
+   - Only when root `app/layout.tsx` throws an error
+   - Very rare in practice - most errors caught by route-level error.tsx
+
+4. **"Why does reset() not work for my error?"**
+   - If error happens unconditionally during render, reset just re-renders → same error
+   - Need to fix the error condition or make it conditional
+
+### Testing Different Error Scenarios
+
+```tsx
+// Test with searchParams (conditional server error)
+async function Page({ searchParams }) {
+  const { error } = await searchParams;
+
+  if (error) {
+    await new Promise(r => setTimeout(r, 1000));
+    throw new Error("Server error triggered!"); // Test server error
+  }
+
+  return <ClientErrorButton />; // Test client error
+}
+
+// Visit /error-demo?error=true → server error
+// Visit /error-demo → click button → client error
+```
+
+### Demo: `http://localhost:3000/error-demo`
+
+**Test scenarios:**
+- `/error-demo` - Normal page with client error button
+- `/error-demo?error=true` - Server-side error during render
+- Click "Trigger Client-Side Error" - Client error during render (state-based)
+- Click "Call Fake API" - Async error in event handler (state-based)
+
+[Official Docs](https://nextjs.org/docs/app/building-your-application/routing/error-handling)
+
+</details>
+
+---
