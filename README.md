@@ -727,3 +727,274 @@ async function Page({ searchParams }) {
 </details>
 
 ---
+
+<details>
+<summary><strong>21. Redirects (redirect, permanentRedirect, next.config.js)</strong> - HTTP redirects, status codes, and when to use each approach</summary>
+
+### Core Concepts
+
+| Method | Where | Status Code | Type | Use Case |
+|--------|-------|-------------|------|----------|
+| `redirect()` | Server Component | **307** Temporary | HTTP redirect | Conditional redirects (auth, form submission) |
+| `redirect()` | **Server Action** | **303** See Other | HTTP redirect | After form POST (prevents resubmit dialog) |
+| `permanentRedirect()` | Server Component/Action | **308** Permanent | HTTP redirect | Permanent URL changes (renamed routes) |
+| `next.config.js` | Config file | 307 or 308 | HTTP redirect | Static redirects, bulk patterns, no page files needed |
+| `router.push()` | Client Component (useRouter) | N/A | Client-side navigation | Client-side programmatic navigation (no HTTP redirect!) |
+| `NextResponse.redirect()` | Middleware | Any | HTTP redirect | Conditional redirects at scale (auth, headers, cookies) |
+
+### Key Distinction: HTTP Redirect vs Client-Side Navigation
+
+**IMPORTANT:** `redirect()` is NOT equivalent to `router.push()`!
+
+```tsx
+// ❌ WRONG MENTAL MODEL
+// "redirect() is just like router.push() but for server-side"
+
+// ✅ CORRECT UNDERSTANDING
+redirect()           → Server sends HTTP redirect (307/308/303 status code)
+router.push()        → Client-side navigation via JavaScript (no HTTP redirect)
+```
+
+**How to observe the difference:**
+- Type URL directly in browser address bar (not via `<Link>`)
+- Check Network tab → Status Code column
+- `redirect()` shows 307/308/303, `router.push()` shows 200 OK
+
+### Temporary (307) vs Permanent (308) Redirects
+
+| Aspect | 307 Temporary | 308 Permanent |
+|--------|---------------|---------------|
+| **Meaning** | "This redirect might change in the future" | "This redirect will NEVER change" |
+| **Search Engines (SEO)** | Keep indexing original URL | Update index to new URL (critical for SEO!) |
+| **Browser Caching** | Don't cache long-term | May cache aggressively |
+| **When to use** | Auth redirects, feature flags, A/B testing | Renamed routes, permanent URL restructuring |
+| **Next.js function** | `redirect()` | `permanentRedirect()` |
+| **next.config.js** | `permanent: false` | `permanent: true` |
+
+**Real-world examples:**
+
+```tsx
+// ✅ Use 307 Temporary - redirect might change based on auth state
+if (!user) {
+  redirect('/login');  // User will eventually be logged in
+}
+
+// ✅ Use 308 Permanent - URL renamed forever
+// Old route: /old-page/page.tsx
+export default function OldPage() {
+  permanentRedirect('/new-page');  // This URL moved permanently
+}
+```
+
+### When to Use next.config.js vs Code
+
+**Use `next.config.js` when:**
+- ✅ Redirects are static/known ahead of time
+- ✅ Pattern matching needed (`/blog/*` → `/articles/*`)
+- ✅ Bulk redirects (100+ URLs)
+- ✅ Don't want to create page files for old routes
+
+**Use `redirect()` / `permanentRedirect()` in code when:**
+- ✅ Conditional logic needed (auth checks, feature flags)
+- ✅ Dynamic redirects based on user state, cookies, database
+- ✅ Need to access request data
+
+**Rule of thumb:** If you can write it in a config file, use `next.config.js`. If you need to run code to decide, use `redirect()`/`permanentRedirect()`.
+
+### Recommended Setup
+
+```typescript
+// 1. next.config.js - Static redirects (no page files needed!)
+const nextConfig = {
+  async redirects() {
+    return [
+      // Simple redirect
+      {
+        source: '/about-us',
+        destination: '/about',
+        permanent: true, // 308
+      },
+      // Pattern matching (bulk redirects)
+      {
+        source: '/blog/:slug',
+        destination: '/articles/:slug',
+        permanent: true, // 308
+      },
+      // Temporary redirect
+      {
+        source: '/temp-page',
+        destination: '/funda',
+        permanent: false, // 307
+      },
+    ];
+  },
+};
+
+// 2. Server Component - Conditional redirect
+async function DashboardPage() {
+  const user = await getUser();
+
+  if (!user) {
+    redirect('/login'); // 307 - temporary (user will log in)
+  }
+
+  return <Dashboard />;
+}
+
+// 3. Old route permanently moved (create page file for old route)
+// app/old-blog/page.tsx
+export default function OldBlog() {
+  permanentRedirect('/articles'); // 308 - permanent URL change
+}
+
+// 4. Server Action - Form submission redirect
+async function createPost(formData: FormData) {
+  'use server';
+
+  const post = await db.posts.create({ /* ... */ });
+  redirect(`/posts/${post.id}`); // 303 - POST/Redirect/GET pattern
+}
+
+// 5. Middleware - Large-scale conditional redirects
+// middleware.ts
+import { NextResponse } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get('token');
+
+  if (!token && request.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  return NextResponse.next();
+}
+```
+
+### Key Learnings
+
+**✅ What Works:**
+
+- **Test redirects by typing URL directly** - Next.js `<Link>` uses client-side navigation that masks HTTP redirects
+- **Check Network tab Status Code** - This reveals the true redirect type (307/308/303)
+- **permanentRedirect() for renamed routes** - Tells search engines + browsers the URL moved forever
+- **redirect() for conditional logic** - Auth checks, feature flags, etc.
+- **next.config.js for bulk redirects** - No need to create 100 page files with `permanentRedirect()`
+- **303 in Server Actions** - Prevents "resubmit form" dialog on page refresh
+- **Pattern matching in next.config.js** - `/blog/:slug` → `/articles/:slug` redirects all blog posts
+
+**⚠️ Common Gotchas:**
+
+- **❌ WRONG: "redirect() is like router.push()"**
+  - Reality: `redirect()` sends HTTP redirect, `router.push()` is client-side navigation (fundamentally different!)
+- **Next.js Link navigation hides redirect behavior** - You'll see 200 OK in Network tab because `<Link>` uses client-side routing
+- **Must type URL in address bar to see redirect status codes** - This triggers real HTTP request
+- **permanentRedirect() enables browser caching** - Browser may skip server and go directly to new URL
+- **Temporary doesn't mean "short duration"** - It means "might change in the future" (could be temporary for years!)
+- **redirect() in Server Actions uses 303, not 307** - Different status code for POST/Redirect/GET pattern
+- **Can't use redirect() in Client Components** - Server-only function (use `router.push()` instead)
+- **next.config.js redirects run before middleware** - Order: config → middleware → page render
+- **Old route needs page file for redirect()** - If using code-based redirect, must create the old route file
+
+**🎯 When to Use Each Approach:**
+
+| Scenario | Approach | Why |
+|----------|----------|-----|
+| User not authenticated → `/login` | `redirect()` in code | Conditional logic based on user state |
+| 100+ blog posts moved `/blog/*` → `/articles/*` | `next.config.js` with pattern | Bulk redirects, no need for 100 page files |
+| Renamed `/about-us` → `/about` permanently | `permanentRedirect()` in old page OR `next.config.js` | Either works; config cleaner (no page file) |
+| After form submission → success page | `redirect()` in Server Action | POST/Redirect/GET pattern (303) |
+| Auth check for entire app | `NextResponse.redirect()` in middleware | Runs before all pages, efficient |
+| Navigate on button click (client-side) | `router.push()` | Client-side, no page reload |
+
+**📊 Status Code Reference:**
+
+| Status Code | Name | When It Appears | Meaning |
+|-------------|------|-----------------|---------|
+| **307** | Temporary Redirect | `redirect()` in Server Component | "Go to new URL, but this might change" |
+| **308** | Permanent Redirect | `permanentRedirect()` | "Go to new URL, and remember this forever" |
+| **303** | See Other | `redirect()` in Server Action | "Go to new URL, and change POST to GET" |
+| **200** | OK | `router.push()`, normal page load | Not a redirect - page loaded successfully |
+
+**🔄 How Redirects Work:**
+
+```tsx
+// Server redirect (307/308)
+Browser: "GET /old-page"
+Server:  "307 Temporary Redirect → Location: /new-page"
+Browser: "OK, GET /new-page instead"
+         (User sees /new-page in address bar)
+
+// Client-side navigation (router.push)
+Browser: "GET /current-page" → 200 OK
+         (JavaScript runs)
+JavaScript: "Update URL to /new-page and render new content"
+            (No HTTP redirect, no server involved)
+```
+
+**💡 Mental Model:**
+
+Think of redirect types based on your intention:
+
+- **Temporary (307):** "I'm redirecting you for now, but this might change later"
+  - Examples: Auth redirects (user will log in), feature flags (might enable later), A/B tests
+
+- **Permanent (308):** "This URL moved forever, update your bookmarks and search results"
+  - Examples: Renamed routes, URL restructuring, migrated content
+
+- **POST/Redirect/GET (303):** "You submitted a form, now let me show you the result"
+  - Prevents duplicate form submissions on page refresh
+
+**🎓 Common Confusion Points:**
+
+1. **"I see 200 OK in Network tab, not 307!"**
+   - You're clicking a `<Link>` component → uses client-side navigation
+   - Type the URL directly in browser address bar to see the real HTTP redirect
+
+2. **"What does 'temporary' mean? How long is temporary?"**
+   - It's not about duration! It's about whether the redirect might change in the future
+   - An auth redirect is "temporary" even if it lasts for months (user might log in eventually)
+
+3. **"Why not just use router.push() everywhere?"**
+   - `router.push()` only works in Client Components
+   - Server Components need `redirect()` for programmatic navigation
+   - SEO: HTTP redirects (308) tell search engines the URL moved permanently
+
+4. **"When do I see 303 vs 307?"**
+   - **303:** Server Actions (form submissions) - prevents "resubmit form" dialog
+   - **307:** Server Components - general purpose temporary redirect
+
+5. **"Should I create a page file for old routes?"**
+   - With `redirect()`/`permanentRedirect()`: Yes, create `/old-page/page.tsx`
+   - With `next.config.js`: No, just add config - Next.js handles it
+
+6. **"What's the difference between redirect() and NextResponse.redirect()?"**
+   - `redirect()`: In Server Components/Actions
+   - `NextResponse.redirect()`: In middleware (runs before page rendering)
+
+### Testing Redirect Behavior
+
+```tsx
+// ❌ BAD: Testing via Link (masks redirect)
+<Link href="/server-redirect">
+  <button>Test Redirect</button>
+</Link>
+// Result: Network tab shows RSC request (200 OK), not HTTP redirect!
+
+// ✅ GOOD: Testing via direct URL access
+1. Open new browser tab
+2. Type in address bar: http://localhost:3000/server-redirect
+3. Watch Network tab → see 307/308 status code
+```
+
+### Demos
+
+- Main redirect demo: `http://localhost:3000/redirect-demo`
+- Server redirect (307): Direct access to `/redirect-demo/server-redirect`
+- Client navigation: `/redirect-demo/client-redirect`
+- Server Action (303): `/redirect-demo/server-action-redirect`
+
+[Official Docs](https://nextjs.org/docs/app/guides/redirecting)
+
+</details>
+
+---

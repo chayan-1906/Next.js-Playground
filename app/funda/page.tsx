@@ -5,7 +5,7 @@ function FundaPage() {
     return (
         <div className={'max-w-4xl mx-auto flex flex-col p-6 gap-8'}>
             <div>
-                <h1 className={'text-3xl font-bold text-gray-900'}>{'Funda'}</h1>
+                <h1 className={'text-3xl font-bold text-gray-900 dark:text-gray-200'}>{'Funda'}</h1>
                 <p className={'mt-1 text-gray-500'}>{'Explore linked profile data'}</p>
             </div>
 

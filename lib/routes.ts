@@ -6,6 +6,9 @@ const routes = {
     serverClientHybridActionStateDemo: '/action-state-demo/server-client-hybrid',
     transitionsDemo: '/transitions-demo',
     errorDemo: '/error-demo',
+    redirectDemo: '/redirect-demo',
+    serverRedirect: '/redirect-demo/server-redirect',
+    clientRedirect: '/redirect-demo/client-redirect',
 
     funda: '/funda',
     fundaPeople: '/funda/people',
