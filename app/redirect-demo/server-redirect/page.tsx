@@ -1,7 +1,16 @@
+import {Suspense} from "react";
 import {permanentRedirect} from "next/navigation";
 import {routes} from "@/lib/routes";
 
 async function ServerRedirectDemo() {
+    return (
+        <Suspense>
+            <ServerRedirectDemoWrapper/>
+        </Suspense>
+    );
+}
+
+async function ServerRedirectDemoWrapper() {
     await new Promise(resolve => setTimeout(resolve, 3000));
     // redirect(routes.funda);
     permanentRedirect(routes.funda);
