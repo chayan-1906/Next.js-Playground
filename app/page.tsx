@@ -16,7 +16,7 @@ function Home() {
                 </Link>
 
                 <Link href={routes.clientActionStateDemo} className={'block'}>
-                    <button className={'w-full px-4 py-3 rounded-xl bg-pink-500 hover:bg-pink-600 transition text-white font-medium cursor-pointer'}>Client Action State Demo</button>
+                    <button className={'w-full px-4 py-3 rounded-xl bg-amber-600 hover:bg-amber-800 transition text-white font-medium cursor-pointer'}>Client Action State Demo</button>
                 </Link>
 
                 <Link href={routes.serverActionStateDemo} className={'block'}>
@@ -33,6 +33,10 @@ function Home() {
 
                 <Link href={routes.errorDemo} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-red-600 hover:bg-red-800 transition text-white font-medium cursor-pointer'}>Error Demo</button>
+                </Link>
+
+                <Link href={routes.redirectDemo} className={'block'}>
+                    <button className={'w-full px-4 py-3 rounded-xl bg-yellow-600 hover:bg-yellow-800 transition text-white font-medium cursor-pointer'}>Redirect Demo</button>
                 </Link>
 
                 <Link href={routes.funda} className={'block'}>

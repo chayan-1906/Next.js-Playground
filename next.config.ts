@@ -15,6 +15,25 @@ const nextConfig: NextConfig = {
             },
         ],
     },
+    async redirects() {
+        return [
+            {
+                source: '/old-page',
+                destination: '/funda',
+                permanent: true,
+            },
+            {
+                source: '/temp-page',
+                destination: '/funda',
+                permanent: false,
+            },
+            {
+                source: '/about-us',
+                destination: '/about',
+                permanent: true,
+            },
+        ];
+    },
 };
 
 export default nextConfig;
