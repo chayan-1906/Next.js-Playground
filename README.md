@@ -729,6 +729,150 @@ async function Page({ searchParams }) {
 ---
 
 <details>
+<summary><strong>13. Proxy (NextResponse.redirect vs NextResponse.rewrite)</strong> - Middleware replacement in Next.js 16, URL manipulation at the edge</summary>
+
+### Core Concepts
+
+| Feature | Purpose | File Location | When It Runs |
+|---------|---------|---------------|--------------|
+| `proxy.ts` | Intercept requests before page renders | Project root (same level as `app/`) | Before every matched request |
+| `NextResponse.redirect()` | Send HTTP redirect to different URL | Inside `proxy()` function | Browser sees new URL |
+| `NextResponse.rewrite()` | Serve different content, keep original URL | Inside `proxy()` function | Browser sees original URL |
+| `NextResponse.next()` | Pass through, don't modify request | Inside `proxy()` function | Continue to page normally |
+| `config.matcher` | Filter which routes trigger proxy | Export from `proxy.ts` | Limits proxy execution scope |
+
+### Key Distinction: redirect vs rewrite
+
+**Real-world Analogy:**
+
+- **Redirect:** You call a store, they say "We moved! Call this new number instead." You hang up and dial the new number. (You know you're calling somewhere else)
+- **Rewrite:** You call a store, they secretly forward your call to another department. You never know you're not talking to the original number. (Transparent to you)
+
+| Aspect | `redirect()` | `rewrite()` |
+|--------|--------------|-------------|
+| **Browser URL** | Changes to new URL | Stays the same |
+| **User perception** | "I was sent somewhere else" | "I'm still on the same page" |
+| **HTTP behavior** | 307/308 response → browser makes new request | Server proxies internally, single request |
+| **SEO** | Search engines follow to new URL | Search engines index original URL |
+| **Use when** | "Go there instead" | "Secretly serve this" |
+
+### Recommended Setup
+
+```typescript
+// proxy.ts (project root)
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+
+export function proxy(request: NextRequest) {
+    const pathname = request.nextUrl.pathname;
+
+    // Redirect: URL changes in browser
+    if (pathname === '/old-page') {
+        return NextResponse.redirect(new URL('/new-page', request.url));
+    }
+
+    // Rewrite: URL stays same, content from different route
+    if (pathname === '/test-rewrite') {
+        return NextResponse.rewrite(new URL('/internal-page', request.url));
+    }
+
+    // Pass through normally
+    return NextResponse.next();
+}
+
+export const config = {
+    matcher: ['/old-page', '/test-rewrite'],
+};
+```
+
+### Why `new URL('/path', request.url)`?
+
+```typescript
+// ❌ WRONG - just a path, not a complete URL
+NextResponse.redirect('/new-page');
+
+// ✅ CORRECT - complete URL with origin (localhost:3000)
+NextResponse.redirect(new URL('/new-page', request.url));
+// Result: http://localhost:3000/new-page
+```
+
+The `request.url` provides the origin (protocol + host + port). Without it, you'd just have `/new-page` which isn't a valid URL for HTTP redirects.
+
+### Key Learnings
+
+**✅ What Works:**
+
+- **proxy.ts = middleware.ts renamed** - Next.js 16 renamed Middleware to Proxy (same functionality, better name)
+- **Export `proxy` function** - Can be named export or default export
+- **Matcher filters routes** - Only matched paths trigger the proxy function
+- **Proxy runs before page renders** - Can intercept, modify, redirect, or rewrite before React touches the request
+- **rewrite() is invisible to user** - URL bar shows original, but content comes from rewritten path
+- **Use `request.nextUrl.pathname`** - Get the current path for conditional logic
+
+**⚠️ Common Gotchas:**
+
+- **Only ONE proxy.ts per project** - Can't have multiple proxy files; organize with imports
+- **Matcher uses string literals** - Can't use variables from other files in matcher array
+- **rewrite() doesn't need target page to NOT exist** - Proxy intercepts first, so target page is never reached
+- **redirect() returns HTTP response** - Browser makes a second request to new URL
+- **rewrite() is single request** - Server handles it internally, no extra round trip
+
+**🎯 When to Use Each:**
+
+| Scenario | Use | Why |
+|----------|-----|-----|
+| Page permanently moved | `redirect()` | User should see new URL, SEO updated |
+| Auth redirect to login | `redirect()` | User knows they're going to login page |
+| A/B testing | `rewrite()` | Same URL serves different content to different users |
+| Multi-tenancy (`acme.app.com` → `/workspaces/acme`) | `rewrite()` | Hide internal structure, clean URLs |
+| Feature flags | `rewrite()` | `/dashboard` serves old or new version based on user segment |
+| Vanity URLs (`/pricing` → `/products/pricing-page`) | `rewrite()` | Clean public URL, organized internal structure |
+| API proxying | `rewrite()` | Hide backend implementation (`/api/data` → external API) |
+
+**📊 Proxy vs Page-level Redirects:**
+
+| Aspect | Proxy (proxy.ts) | Page (redirect/permanentRedirect) |
+|--------|------------------|-----------------------------------|
+| **Runs when** | Before page renders | During page render |
+| **Access to** | Request headers, cookies, URL | Page props, searchParams |
+| **Scale** | All routes matching pattern | Single page |
+| **Best for** | Auth guards, rewrites, global patterns | Page-specific redirects |
+
+**🎓 Common Confusion Points:**
+
+1. **"What happened to middleware.ts?"**
+   - Next.js 16 renamed it to `proxy.ts` to better reflect its purpose
+   - Same functionality, different name
+
+2. **"When would I use rewrite over redirect?"**
+   - **rewrite:** When you want to hide internal URL structure (multi-tenancy, vanity URLs, A/B testing)
+   - **redirect:** When the user should know/see the new URL (page moved, auth redirect)
+
+3. **"Does the target page need to exist for rewrite?"**
+   - Yes! The rewritten path must have a valid page, or you'll get 404
+   - But you DON'T need a page at the original path - proxy intercepts before that matters
+
+4. **"Why doesn't matcher accept variables?"**
+   - Matcher is statically analyzed at build time for optimization
+   - Must be string literals or regex patterns
+
+5. **"Can I use both redirect and rewrite in the same proxy?"**
+   - Yes! Use conditional logic based on pathname, headers, cookies, etc.
+   - Just return the appropriate `NextResponse` for each case
+
+### Demo: `http://localhost:3000/redirect-rewrite-demo`
+
+**Test scenarios:**
+- Click "Test Redirect" → URL changes to `/funda`, content from `/funda`
+- Click "Test Rewrite" → URL stays `/redirect-rewrite-demo/test-rewrite`, content from `/funda`
+
+[Official Docs](https://nextjs.org/docs/app/api-reference/functions/next-response)
+
+</details>
+
+---
+
+<details>
 <summary><strong>21. Redirects (redirect, permanentRedirect, next.config.js)</strong> - HTTP redirects, status codes, and when to use each approach</summary>
 
 ### Core Concepts
