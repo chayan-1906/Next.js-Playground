@@ -9,6 +9,9 @@ const routes = {
     redirectDemo: '/redirect-demo',
     serverRedirect: '/redirect-demo/server-redirect',
     clientRedirect: '/redirect-demo/client-redirect',
+    redirectRewriteDemo: '/redirect-rewrite-demo',
+    testRedirect: '/redirect-rewrite-demo/test-redirect',
+    testRewrite: '/redirect-rewrite-demo/test-rewrite',
 
     funda: '/funda',
     fundaPeople: '/funda/people',
