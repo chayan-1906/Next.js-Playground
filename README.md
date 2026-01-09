@@ -729,6 +729,84 @@ async function Page({ searchParams }) {
 ---
 
 <details>
+<summary><strong>12. nextUrl (URL vs nextUrl)</strong> - Why nextUrl is better for middleware/proxy</summary>
+
+### Core Concepts
+
+| Feature | Purpose | Usage |
+|---------|---------|-------|
+| `nextUrl` | Next.js-specific URL object | `request.nextUrl` in Proxy/Middleware |
+| `pathname` | Path of the URL | `request.nextUrl.pathname` |
+| `searchParams` | Query parameters object | `request.nextUrl.searchParams.get('name')` |
+| `basePath` | Configured base path of app | `request.nextUrl.basePath` |
+| `locale` | Current locale (i18n) | `request.nextUrl.locale` |
+
+### Why nextUrl > Native URL API?
+
+`nextUrl` is framework-aware. It automatically handles **basePath** and **locales**, stripping them from the `pathname` so your routing logic remains consistent regardless of deployment configuration.
+
+| Aspect | Native `new URL(request.url)` | Next.js `request.nextUrl` |
+|--------|-------------------------------|---------------------------|
+| **pathname** | Includes basePath/locale (e.g., `/en/dashboard/page`) | Clean path (e.g., `/page`) |
+| **Parsing** | Manual string manipulation needed | Automatic |
+
+### Demo Output Comparison
+
+**1. Normal Route:** `http://localhost:3000/proxy-demo?name=Gemini&mode=teacher`
+
+```text
+--- nextUrl Inspection ---
+Pathname: /proxy-demo
+Search Params: name=Gemini&mode=teacher
+Base Path:
+Locale:
+
+--- URL Comparison ---
+NextUrl Pathname: /proxy-demo
+Native Pathname: /proxy-demo
+NextUrl Host: localhost:3000
+Native Host: localhost:3000
+
+GET /proxy-demo?name=Gemini&mode=teacher 200 in 64ms (compile: 3ms, proxy.ts: 7ms, render: 54ms)
+```
+
+**2. Non-existent Sub-path:** `http://localhost:3000/proxy-demo/test-sub-path`
+
+```text
+--- nextUrl Inspection ---
+Pathname: /proxy-demo/test-sub-path
+Search Params:
+Base Path:
+Locale:
+
+--- URL Comparison ---
+NextUrl Pathname: /proxy-demo/test-sub-path
+Native Pathname: /proxy-demo/test-sub-path
+NextUrl Host: localhost:3000
+Native Host: localhost:3000
+
+GET /proxy-demo/test-sub-path 404 in 59ms (compile: 4ms, proxy.ts: 6ms, render: 49ms)
+```
+
+### Key Learnings (Clearing Confusion)
+
+**✅ Proxy Lifecycle:**
+- The proxy runs **before** Next.js checks if a page exists. 
+- `NextResponse.next()` simply tells Next.js to continue its normal routing.
+
+**⚠️ Common Gotchas:**
+- **Proxy runs first:** This is why you see logs in the console even if the browser shows a 404.
+- **404 is Expected:** If you visit a path (like `/proxy-demo/test-sub-path`) that doesn't have a matching folder/file in `app/`, Next.js will 404 **after** the proxy has finished its job. `nextUrl` doesn't prevent 404s; it's just a tool for inspection.
+
+### Demo: `http://localhost:3000/proxy-demo`
+
+[Official Docs](https://nextjs.org/docs/app/api-reference/functions/next-request#nexturl)
+
+</details>
+
+---
+
+<details>
 <summary><strong>13. Proxy (NextResponse.redirect vs NextResponse.rewrite)</strong> - Middleware replacement in Next.js 16, URL manipulation at the edge</summary>
 
 ### Core Concepts

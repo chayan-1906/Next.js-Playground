@@ -35,6 +35,10 @@ function Home() {
                     <button className={'w-full px-4 py-3 rounded-xl bg-red-600 hover:bg-red-800 transition text-white font-medium cursor-pointer'}>Error Demo</button>
                 </Link>
 
+                <Link href={routes.proxyDemo} className={'block'}>
+                    <button className={'w-full px-4 py-3 rounded-xl bg-gray-600 hover:bg-gray-800 transition text-white font-medium cursor-pointer'}>Proxy Demo</button>
+                </Link>
+
                 <Link href={routes.redirectDemo} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-yellow-600 hover:bg-yellow-800 transition text-white font-medium cursor-pointer'}>Redirect Demo</button>
                 </Link>
