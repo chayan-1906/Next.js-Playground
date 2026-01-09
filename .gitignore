@@ -93,3 +93,4 @@ storybook-static
 # AI
 .claude
 CLAUDE.md
+.gemini-*
