@@ -729,6 +729,262 @@ async function Page({ searchParams }) {
 ---
 
 <details>
+<summary><strong>6. Intercepting Routes</strong> - Show modals on navigation, full pages on direct visits/refresh</summary>
+
+### Core Concepts
+
+| Feature | Purpose | Convention | Behavior |
+|---------|---------|------------|----------|
+| Intercepting Routes | Show different UI based on navigation context | Folder prefix: `(.)`, `(..)`, `(...)` | Same URL, different view |
+| `(.)` | Intercept routes at the **same level** | `(.)photos/[id]` intercepts `photos/[id]` | Most common pattern |
+| `(..)` | Intercept routes **one level up** | `(..)dashboard` intercepts `../dashboard` | For nested routes |
+| `(..)(..)` | Intercept routes **two levels up** | `(..)(..)settings` | Rare, deep nesting |
+| `(...)` | Intercept from **app root** | `(...)admin` intercepts `/admin` | Global interception |
+
+### The "Aha Moment"
+
+**Same URL, Different UI:**
+
+```
+Scenario 1: Click photo from gallery
+  → Navigate to /photos/15
+  → Next.js checks: Is there a (.)photos/[id] route?
+  → YES! Show modal (intercepting route)
+  → URL in browser: /photos/15
+  → UI: Modal overlay
+
+Scenario 2: Refresh page or direct visit
+  → Visit /photos/15 directly
+  → Next.js checks: Is there a (.)photos/[id] route?
+  → NO navigation happened, so NO interception
+  → Show full page (photos/[id]/page.tsx)
+  → URL in browser: /photos/15
+  → UI: Full page layout
+```
+
+**Key Insight:** Interception only happens during Link navigation, NOT on direct visits or page refreshes.
+
+### Recommended Setup
+
+```typescript
+// Folder structure
+app/
+  intercepting-parallel-demo/
+    page.tsx                    // Photo grid
+    photos/
+      [id]/
+        page.tsx                // Full page view (direct visit/refresh)
+    (.)photos/
+      [id]/
+        page.tsx                // Modal view (intercepted navigation)
+
+// 1. Gallery page with Links
+// app/intercepting-parallel-demo/page.tsx
+import Link from "next/link";
+
+const PHOTOS = Array.from({length: 16}, (_, i) => ({
+  id: (10 + i).toString(),
+  title: `Photo ${i + 1}`,
+  url: `https://picsum.photos/id/${10 + i}/900/900`,
+}));
+
+export default function Gallery() {
+  return (
+    <div>
+      {PHOTOS.map((photo) => (
+        <Link key={photo.id} href={`/intercepting-parallel-demo/photos/${photo.id}`}>
+          <Image src={photo.url} alt={photo.title} />
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+// 2. Full page view (shown on direct visit/refresh)
+// app/intercepting-parallel-demo/photos/[id]/page.tsx
+export default async function PhotoDetails({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
+  return (
+    <div>
+      <Link href="/intercepting-parallel-demo">← Back to Gallery</Link>
+      <h1>Photo {id}</h1>
+      <Image src={`https://picsum.photos/id/${id}/1200/800`} alt={`Photo ${id}`} />
+      {/* Full page layout with details */}
+    </div>
+  );
+}
+
+// 3. Modal view (shown on Link navigation from gallery)
+// app/intercepting-parallel-demo/(.)photos/[id]/page.tsx
+"use client";
+
+import { use } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+
+type Props = {
+  params: Promise<{ id: string }>; // IMPORTANT: params is a Promise in Next.js 15+
+};
+
+export default function PhotoModal({ params }: Props) {
+  const router = useRouter();
+  const { id } = use(params); // Unwrap Promise with use()
+
+  return (
+    <div className="fixed inset-0 bg-black/90 z-50" onClick={() => router.back()}>
+      <div className="relative w-full h-full" onClick={(e) => e.stopPropagation()}>
+        <button onClick={() => router.back()}>×</button>
+        <Image src={`https://picsum.photos/id/${id}/1200/800`} alt={`Photo ${id}`} fill />
+      </div>
+    </div>
+  );
+}
+```
+
+### Key Learnings
+
+**✅ What Works:**
+
+- **`(.)` is the interceptor indicator** - Tells Next.js to intercept navigation to matching route
+- **Must use `<Link>` components** - Intercepting only works with Link navigation, not direct URL visits
+- **Same URL, different views** - `/photos/15` can show modal OR full page depending on how you got there
+- **Browser back button works** - `router.back()` closes modal and returns to gallery
+- **Default export required** - Page components MUST use `export default`, not named exports
+- **`params` is a Promise in Next.js 15+** - Must unwrap with `use(params)` or `await params`
+- **Client component for interactivity** - Modal needs `"use client"` for `onClick`, `useRouter()`, etc.
+- **Server component possible** - Can use `<Link>` for close button instead of `router.back()` for pure server component
+
+**⚠️ Common Gotchas:**
+
+- **❌ Named export doesn't work** - `export { PhotoModal }` won't be recognized as a page
+  - ✅ Must use `export default PhotoModal`
+- **Gallery NOT visible behind modal** - Without parallel routes, the intercepting route REPLACES the page content
+  - The modal is just **styled** to look like a modal (fixed positioning, overlay)
+  - To have BOTH gallery AND modal visible simultaneously, you need **Parallel Routes** (Phase 2)
+- **`params` type confusion** - Must be `Promise<{ id: string }>` not `{ id: string }`
+  - ❌ `const { id } = params;` → TypeScript error
+  - ✅ `const { id } = use(params);` → Correct
+- **Interception only on navigation** - Direct URL visits and refreshes bypass interception
+  - Test by clicking from gallery (shows modal)
+  - Then refresh (shows full page) - same URL!
+- **Click-outside-to-close requires client component** - Server components can't use `onClick` handlers
+  - Client component: `router.back()` on overlay click ✅
+  - Server component: Only `<Link>` for close button (no click-outside) ❌
+
+**🎯 Server Component vs Client Component for Modals:**
+
+| Aspect | Client Component | Server Component |
+|--------|------------------|------------------|
+| **Directive** | `"use client"` | No directive (default) |
+| **Close mechanism** | `router.back()` on button/overlay click | `<Link href="/gallery">` only |
+| **Click-outside-to-close** | ✅ Yes - use `onClick` on overlay | ❌ No - can't use `onClick` |
+| **params handling** | `use(params)` | `await params` |
+| **When to use** | Need interactivity (click handlers) | Pure navigation, no interactivity |
+
+**📊 Navigation Context Matters:**
+
+| How You Got There | Route Shown | Why |
+|-------------------|-------------|-----|
+| Click `<Link>` from gallery | `(.)photos/[id]` (modal) | Intercepting route catches navigation |
+| Direct URL visit in browser | `photos/[id]` (full page) | No navigation, no interception |
+| Refresh page | `photos/[id]` (full page) | Page reload, no navigation context |
+| Browser back from modal | Gallery page | `router.back()` returns to previous page |
+| Share URL with friend | `photos/[id]` (full page) | They're visiting directly, not navigating |
+
+**💡 Mental Model:**
+
+Think of intercepting routes like a "navigation trap":
+
+```
+User clicks Link → Next.js: "Wait! Before showing photos/[id],
+                            let me check if there's an interceptor..."
+                  → Finds (.)photos/[id]
+                  → Shows modal instead
+
+User types URL   → Next.js: "No navigation happened, no interception"
+                  → Shows photos/[id] normally (full page)
+```
+
+The `(.)` prefix is a special folder naming convention that Next.js recognizes as an interceptor.
+
+**🎓 Common Confusion Points:**
+
+1. **"Why don't I see the gallery behind the modal?"**
+   - The intercepting route **replaces** the page content, it doesn't render on top
+   - You've only styled it with `fixed` positioning to look like a modal
+   - To have BOTH visible, you need **Parallel Routes** (covered in Phase 2)
+
+2. **"Why does my modal show as a full page on refresh?"**
+   - This is expected! Refresh = page reload = no navigation = no interception
+   - Intercepting only happens during **Link navigation**, not direct visits
+
+3. **"Can't I just use named export for the page?"**
+   - No! Next.js pages **must** use `export default`
+   - Named exports (`export { Component }`) won't be recognized as pages
+
+4. **"Why is params a Promise? It used to be a regular object!"**
+   - Next.js 15+ made `params` async for performance optimizations
+   - Must unwrap with `use(params)` in client components or `await params` in server components
+
+5. **"What's the difference between (.) and (..)?"**
+   - `(.)` - Same level: `(.)photos` intercepts `photos` in same folder
+   - `(..)` - One level up: `(..)dashboard` intercepts `../dashboard`
+   - `(...)` - App root: `(...)admin` intercepts `/admin` from anywhere
+
+6. **"Can I test interception with browser address bar?"**
+   - No! Typing URLs directly = no navigation = no interception
+   - Must click `<Link>` components to trigger interception
+
+**🔄 Testing Interception Behavior:**
+
+```tsx
+// Test 1: Click from Gallery (Interception works)
+1. Go to /intercepting-parallel-demo
+2. Click a photo
+3. URL changes to /photos/15
+4. See: Modal overlay (intercepting route)
+
+// Test 2: Refresh (No interception)
+1. While modal is open, press F5
+2. URL stays /photos/15
+3. See: Full page view (normal route)
+
+// Test 3: Direct Visit (No interception)
+1. Open new tab
+2. Type /intercepting-parallel-demo/photos/15
+3. See: Full page view (normal route)
+
+// Test 4: Back Button (Modal closes)
+1. Click photo to open modal
+2. Press browser back button
+3. See: Gallery page (router.back() works!)
+```
+
+**🚀 Next Steps:**
+
+Phase 1 covered **Intercepting Routes** (modals on navigation).
+
+**Phase 2** will cover **Parallel Routes** (rendering multiple sections simultaneously), enabling:
+- Gallery visible behind modal
+- Independent loading states per section
+- Multiple panels with independent navigation
+
+### Demo: `http://localhost:3000/intercepting-parallel-demo`
+
+**Test it yourself:**
+- Click any photo → Modal appears, URL changes to `/photos/[id]`
+- Refresh → Full page view appears, same URL
+- Direct visit `/photos/15` → Full page view
+- Click photo, then browser back → Returns to gallery
+
+[Official Docs - Intercepting Routes](https://nextjs.org/docs/app/building-your-application/routing/intercepting-routes)
+
+</details>
+
+---
+
+<details>
 <summary><strong>12. nextUrl (URL vs nextUrl)</strong> - Why nextUrl is better for middleware/proxy</summary>
 
 ### Core Concepts

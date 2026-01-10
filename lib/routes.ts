@@ -1,15 +1,25 @@
 const routes = {
     scriptDemo: '/script-demo',
+
     cachingDemo: '/caching-demo',
+
     clientActionStateDemo: '/action-state-demo/client-only',
     serverActionStateDemo: '/action-state-demo/server-only',
     serverClientHybridActionStateDemo: '/action-state-demo/server-client-hybrid',
+
     transitionsDemo: '/transitions-demo',
+
     errorDemo: '/error-demo',
+
+    interceptingParallelDemo: '/intercepting-parallel-demo',
+    photoDetailsDemo: (id: string) => `/intercepting-parallel-demo/photos/${id}`,
+
     proxyDemo: '/proxy-demo',
+
     redirectDemo: '/redirect-demo',
     serverRedirect: '/redirect-demo/server-redirect',
     clientRedirect: '/redirect-demo/client-redirect',
+
     redirectRewriteDemo: '/redirect-rewrite-demo',
     testRedirect: '/redirect-rewrite-demo/test-redirect',
     testRewrite: '/redirect-rewrite-demo/test-rewrite',
