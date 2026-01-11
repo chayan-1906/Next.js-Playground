@@ -12,7 +12,9 @@ const routes = {
     errorDemo: '/error-demo',
 
     interceptingParallelDemo: '/intercepting-parallel-demo',
-    photoDetailsDemo: (id: string) => `/intercepting-parallel-demo/photos/${id}`,
+    interceptingDemo: '/intercepting-parallel-demo/intercepting',
+    photoDetailsDemo: (id: string) => `/intercepting-parallel-demo/intercepting/photos/${id}`,
+    parallelDemo: `/intercepting-parallel-demo/parallel`,
 
     proxyDemo: '/proxy-demo',
 

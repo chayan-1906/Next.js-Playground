@@ -29,7 +29,7 @@ async function PhotoDetailsWrapper({params}: PhotoDetailsProps) {
 
     return (
         <div className={'min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 p-8 flex flex-col items-center justify-center relative'}>
-            <Link href={routes.interceptingParallelDemo} className={'absolute top-8 left-8 flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline font-medium'}>
+            <Link href={routes.interceptingDemo} className={'absolute top-8 left-8 flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline font-medium'}>
                 <span>←</span> Back to Gallery
             </Link>
 
