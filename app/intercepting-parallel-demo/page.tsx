@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import {FiCamera, FiLayout} from 'react-icons/fi';
+import {FiCamera, FiLayout, FiSettings} from 'react-icons/fi';
 import {routes} from '@/lib/routes';
 
 function InterceptingParallelDemo() {
@@ -40,6 +40,20 @@ function InterceptingParallelDemo() {
                             </h2>
                             <p className={'text-gray-600 dark:text-gray-400'}>
                                 Load independent sections of the page in parallel, like a dashboard with separate stats and activity feeds.
+                            </p>
+                        </div>
+                    </Link>
+
+                    {/* Settings Page Card */}
+                    <Link href={routes.settingsDemo} className={'block'}>
+                        <div
+                            className={'group relative p-8 bg-gray-50 dark:bg-gray-900 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-800 hover:border-purple-500 dark:hover:border-purple-500'}>
+                            <FiSettings className={'text-purple-500 w-12 h-12 mb-4 transition-transform duration-300 group-hover:scale-110'}/>
+                            <h2 className={'text-2xl font-bold text-gray-900 dark:text-white mb-2'}>
+                                Settings Page
+                            </h2>
+                            <p className={'text-gray-600 dark:text-gray-400'}>
+                                Manage your account, billing, and notification preferences
                             </p>
                         </div>
                     </Link>

@@ -15,6 +15,13 @@ const routes = {
     interceptingDemo: '/intercepting-parallel-demo/intercepting',
     photoDetailsDemo: (id: string) => `/intercepting-parallel-demo/intercepting/photos/${id}`,
     parallelDemo: `/intercepting-parallel-demo/parallel`,
+    settingsDemo: `/intercepting-parallel-demo/settings`,
+    settings: `/intercepting-parallel-demo/settings`,
+    settingsProfileDemo: `/intercepting-parallel-demo/settings/profile`,
+    settingsSecurityDemo: `/intercepting-parallel-demo/settings/security`,
+    settingsPaymentDemo: `/intercepting-parallel-demo/settings/payment-methods`,
+    settingsInvoicesDemo: `/intercepting-parallel-demo/settings/invoices`,
+    settingsPreferencesDemo: `/intercepting-parallel-demo/settings/preferences`,
 
     proxyDemo: '/proxy-demo',
 

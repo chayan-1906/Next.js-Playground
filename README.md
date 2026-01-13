@@ -323,16 +323,16 @@ function Form() {
 
 **📊 Three Approaches Compared:**
 
-| Feature | Client (useActionState) | Server (Pure) | Hybrid (useFormStatus) |
-|---------|------------------------|---------------|------------------------|
-| **Component Type** | Client Component | Server Component | Server + Client button |
-| **Pending State** | ✅ Yes | ❌ No | ✅ Yes |
-| **Error Messages** | ✅ Yes | ❌ No | ❌ No |
-| **Success Messages** | ✅ Yes | ❌ No | ❌ No |
-| **Form Repopulation** | ✅ Yes | ❌ No | ❌ No |
-| **Server Action Signature** | `(prevState, formData) => Promise<State>` | `(formData) => Promise<void>` | `(formData) => Promise<void>` |
-| **Complexity** | High | Low | Medium |
-| **When to Use** | Forms with validation feedback | Simple forms, no feedback needed | Forms where you only need pending state |
+| Feature                     | Client (useActionState)                   | Server (Pure)                    | Hybrid (useFormStatus)                  |
+|-----------------------------|-------------------------------------------|----------------------------------|-----------------------------------------|
+| **Component Type**          | Client Component                          | Server Component                 | Server + Client button                  |
+| **Pending State**           | ✅ Yes                                     | ❌ No                             | ✅ Yes                                   |
+| **Error Messages**          | ✅ Yes                                     | ❌ No                             | ❌ No                                    |
+| **Success Messages**        | ✅ Yes                                     | ❌ No                             | ❌ No                                    |
+| **Form Repopulation**       | ✅ Yes                                     | ❌ No                             | ❌ No                                    |
+| **Server Action Signature** | `(prevState, formData) => Promise<State>` | `(formData) => Promise<void>`    | `(formData) => Promise<void>`           |
+| **Complexity**              | High                                      | Low                              | Medium                                  |
+| **When to Use**             | Forms with validation feedback            | Simple forms, no feedback needed | Forms where you only need pending state |
 
 ### Demos
 
@@ -351,11 +351,11 @@ function Form() {
 
 ### Core Concepts
 
-| Feature | Purpose | Returns | Usage |
-|---------|---------|---------|-------|
-| `useTransition` | Mark state updates as non-urgent | `[isPending, startTransition]` | Keep UI responsive during slow updates |
-| `isPending` | Indicates if transition is in progress | `boolean` | Show loading indicators |
-| `startTransition` | Wrap slow state updates | `(callback) => void` | Updates inside won't block UI |
+| Feature           | Purpose                                | Returns                        | Usage                                  |
+|-------------------|----------------------------------------|--------------------------------|----------------------------------------|
+| `useTransition`   | Mark state updates as non-urgent       | `[isPending, startTransition]` | Keep UI responsive during slow updates |
+| `isPending`       | Indicates if transition is in progress | `boolean`                      | Show loading indicators                |
+| `startTransition` | Wrap slow state updates                | `(callback) => void`           | Updates inside won't block UI          |
 
 ### The Problem Without Transitions
 
@@ -438,24 +438,24 @@ function WithTransition() {
 
 **🎯 When to Use Transitions:**
 
-| Scenario | Use Transition? | Why |
-|----------|----------------|-----|
-| Search filtering 10,000+ items | ✅ Yes | Keeps input responsive while filtering |
-| Tab switching with heavy content | ✅ Yes | Old tab stays visible while new tab loads |
-| Sorting/paginating large datasets | ✅ Yes | UI doesn't freeze during re-render |
-| Simple form input | ❌ No | Input should respond immediately |
-| Navigation/routing | ❌ No | Next.js handles this automatically |
-| Async data fetching | ❌ No | Use Suspense + Server Components instead |
+| Scenario                          | Use Transition? | Why                                       |
+|-----------------------------------|-----------------|-------------------------------------------|
+| Search filtering 10,000+ items    | ✅ Yes           | Keeps input responsive while filtering    |
+| Tab switching with heavy content  | ✅ Yes           | Old tab stays visible while new tab loads |
+| Sorting/paginating large datasets | ✅ Yes           | UI doesn't freeze during re-render        |
+| Simple form input                 | ❌ No            | Input should respond immediately          |
+| Navigation/routing                | ❌ No            | Next.js handles this automatically        |
+| Async data fetching               | ❌ No            | Use Suspense + Server Components instead  |
 
 **📊 With vs Without Transitions:**
 
-| Aspect | Without Transition | With Transition |
-|--------|-------------------|-----------------|
-| **Input responsiveness** | ❌ Blocks/lags | ✅ Smooth/instant |
-| **Update timing** | Immediate (but janky) | Slightly delayed (but smooth) |
-| **User experience** | Feels slow | Feels fast |
-| **Loading indicator** | Hard to show | ✅ `isPending` available |
-| **Code complexity** | Simple | Slightly more complex |
+| Aspect                   | Without Transition    | With Transition               |
+|--------------------------|-----------------------|-------------------------------|
+| **Input responsiveness** | ❌ Blocks/lags         | ✅ Smooth/instant              |
+| **Update timing**        | Immediate (but janky) | Slightly delayed (but smooth) |
+| **User experience**      | Feels slow            | Feels fast                    |
+| **Loading indicator**    | Hard to show          | ✅ `isPending` available       |
+| **Code complexity**      | Simple                | Slightly more complex         |
 
 **🔄 How It Works Internally:**
 
@@ -514,12 +514,12 @@ React prioritizes urgent updates over non-urgent ones, keeping UI responsive.
 
 ### Core Concepts
 
-| Feature | Purpose | Placement | Must Include |
-|---------|---------|-----------|--------------|
-| `error.tsx` | Route-level error boundary | `app/[route]/error.tsx` | `"use client"` directive |
-| `global-error.tsx` | Root layout error boundary | `app/global-error.tsx` | `"use client"`, `<html>`, `<body>` |
-| `error` prop | Error object from boundary | Both files | `Error` type with `.message` |
-| `reset()` prop | Re-render error boundary children | Both files | Resets component state to initial |
+| Feature            | Purpose                           | Placement               | Must Include                       |
+|--------------------|-----------------------------------|-------------------------|------------------------------------|
+| `error.tsx`        | Route-level error boundary        | `app/[route]/error.tsx` | `"use client"` directive           |
+| `global-error.tsx` | Root layout error boundary        | `app/global-error.tsx`  | `"use client"`, `<html>`, `<body>` |
+| `error` prop       | Error object from boundary        | Both files              | `Error` type with `.message`       |
+| `reset()` prop     | Re-render error boundary children | Both files              | Resets component state to initial  |
 
 ### Error Boundary Scope
 
@@ -533,11 +533,11 @@ app/layout.tsx                    ← global-error.tsx catches this
 
 ### What Error Boundaries Catch
 
-| Error Type | Caught by error.tsx? | How to Test |
-|------------|---------------------|-------------|
-| **Rendering errors** (Server/Client) | ✅ Yes | `throw new Error()` in component body |
-| **Event handler errors** | ❌ No | `onClick={() => throw Error()}` - won't work! |
-| **Async errors in event handlers** | ❌ No | `onClick={async () => { await fetch() }}` - won't work! |
+| Error Type                           | Caught by error.tsx? | How to Test                                             |
+|--------------------------------------|----------------------|---------------------------------------------------------|
+| **Rendering errors** (Server/Client) | ✅ Yes                | `throw new Error()` in component body                   |
+| **Event handler errors**             | ❌ No                 | `onClick={() => throw Error()}` - won't work!           |
+| **Async errors in event handlers**   | ❌ No                 | `onClick={async () => { await fetch() }}` - won't work! |
 
 ### Recommended Setup
 
@@ -643,12 +643,12 @@ function AsyncErrorComponent() {
 
 **🎯 Client vs Server - The Real Distinction:**
 
-| Aspect | Client Component | Server Component |
-|--------|------------------|------------------|
-| **Can be async?** | ❌ No | ✅ Yes |
-| **Errors during render caught?** | ✅ Yes | ✅ Yes |
-| **Event handler errors caught?** | ❌ No | N/A (no event handlers) |
-| **Execution location** | Browser | Server (then serialized to client) |
+| Aspect                           | Client Component | Server Component                   |
+|----------------------------------|------------------|------------------------------------|
+| **Can be async?**                | ❌ No             | ✅ Yes                              |
+| **Errors during render caught?** | ✅ Yes            | ✅ Yes                              |
+| **Event handler errors caught?** | ❌ No             | N/A (no event handlers)            |
+| **Execution location**           | Browser          | Server (then serialized to client) |
 
 **🔄 How reset() Works:**
 
@@ -670,12 +670,12 @@ function AsyncErrorComponent() {
 
 **📊 Error Boundaries vs Try/Catch:**
 
-| Error Type | Handle With | Why |
-|------------|-------------|-----|
-| Rendering errors | error.tsx | React error boundaries designed for this |
-| Event handler errors | Try/catch or state pattern | Error boundaries don't catch these |
-| Async errors in events | Try/catch or state pattern | Outside render phase |
-| Server Action errors | Server Action return value | Can't use error boundaries |
+| Error Type             | Handle With                | Why                                      |
+|------------------------|----------------------------|------------------------------------------|
+| Rendering errors       | error.tsx                  | React error boundaries designed for this |
+| Event handler errors   | Try/catch or state pattern | Error boundaries don't catch these       |
+| Async errors in events | Try/catch or state pattern | Outside render phase                     |
+| Server Action errors   | Server Action return value | Can't use error boundaries               |
 
 **🎓 Common Confusion Points:**
 
@@ -729,17 +729,17 @@ async function Page({ searchParams }) {
 ---
 
 <details>
-<summary><strong>6. Intercepting Routes</strong> - Show modals on navigation, full pages on direct visits/refresh</summary>
+<summary><strong>8. Intercepting Routes</strong> - Show modals on navigation, full pages on direct visits/refresh</summary>
 
 ### Core Concepts
 
-| Feature | Purpose | Convention | Behavior |
-|---------|---------|------------|----------|
-| Intercepting Routes | Show different UI based on navigation context | Folder prefix: `(.)`, `(..)`, `(...)` | Same URL, different view |
-| `(.)` | Intercept routes at the **same level** | `(.)photos/[id]` intercepts `photos/[id]` | Most common pattern |
-| `(..)` | Intercept routes **one level up** | `(..)dashboard` intercepts `../dashboard` | For nested routes |
-| `(..)(..)` | Intercept routes **two levels up** | `(..)(..)settings` | Rare, deep nesting |
-| `(...)` | Intercept from **app root** | `(...)admin` intercepts `/admin` | Global interception |
+| Feature             | Purpose                                       | Convention                                | Behavior                 |
+|---------------------|-----------------------------------------------|-------------------------------------------|--------------------------|
+| Intercepting Routes | Show different UI based on navigation context | Folder prefix: `(.)`, `(..)`, `(...)`     | Same URL, different view |
+| `(.)`               | Intercept routes at the **same level**        | `(.)photos/[id]` intercepts `photos/[id]` | Most common pattern      |
+| `(..)`              | Intercept routes **one level up**             | `(..)dashboard` intercepts `../dashboard` | For nested routes        |
+| `(..)(..)`          | Intercept routes **two levels up**            | `(..)(..)settings`                        | Rare, deep nesting       |
+| `(...)`             | Intercept from **app root**                   | `(...)admin` intercepts `/admin`          | Global interception      |
 
 ### The "Aha Moment"
 
@@ -874,23 +874,23 @@ export default function PhotoModal({ params }: Props) {
 
 **🎯 Server Component vs Client Component for Modals:**
 
-| Aspect | Client Component | Server Component |
-|--------|------------------|------------------|
-| **Directive** | `"use client"` | No directive (default) |
-| **Close mechanism** | `router.back()` on button/overlay click | `<Link href="/gallery">` only |
-| **Click-outside-to-close** | ✅ Yes - use `onClick` on overlay | ❌ No - can't use `onClick` |
-| **params handling** | `use(params)` | `await params` |
-| **When to use** | Need interactivity (click handlers) | Pure navigation, no interactivity |
+| Aspect                     | Client Component                        | Server Component                  |
+|----------------------------|-----------------------------------------|-----------------------------------|
+| **Directive**              | `"use client"`                          | No directive (default)            |
+| **Close mechanism**        | `router.back()` on button/overlay click | `<Link href="/gallery">` only     |
+| **Click-outside-to-close** | ✅ Yes - use `onClick` on overlay        | ❌ No - can't use `onClick`        |
+| **params handling**        | `use(params)`                           | `await params`                    |
+| **When to use**            | Need interactivity (click handlers)     | Pure navigation, no interactivity |
 
 **📊 Navigation Context Matters:**
 
-| How You Got There | Route Shown | Why |
-|-------------------|-------------|-----|
-| Click `<Link>` from gallery | `(.)photos/[id]` (modal) | Intercepting route catches navigation |
-| Direct URL visit in browser | `photos/[id]` (full page) | No navigation, no interception |
-| Refresh page | `photos/[id]` (full page) | Page reload, no navigation context |
-| Browser back from modal | Gallery page | `router.back()` returns to previous page |
-| Share URL with friend | `photos/[id]` (full page) | They're visiting directly, not navigating |
+| How You Got There           | Route Shown               | Why                                       |
+|-----------------------------|---------------------------|-------------------------------------------|
+| Click `<Link>` from gallery | `(.)photos/[id]` (modal)  | Intercepting route catches navigation     |
+| Direct URL visit in browser | `photos/[id]` (full page) | No navigation, no interception            |
+| Refresh page                | `photos/[id]` (full page) | Page reload, no navigation context        |
+| Browser back from modal     | Gallery page              | `router.back()` returns to previous page  |
+| Share URL with friend       | `photos/[id]` (full page) | They're visiting directly, not navigating |
 
 **💡 Mental Model:**
 
@@ -985,26 +985,596 @@ Phase 1 covered **Intercepting Routes** (modals on navigation).
 ---
 
 <details>
+<summary><strong>7. Parallel Routes</strong> - Render multiple page sections simultaneously with independent loading states</summary>
+
+### Core Concepts
+
+| Feature         | Purpose                                                 | Convention            | Behavior                               |
+|-----------------|---------------------------------------------------------|-----------------------|----------------------------------------|
+| Parallel Routes | Render multiple pages in the same layout simultaneously | Folder prefix: `@`    | Slots passed as props to layout        |
+| `@slotName`     | Define a slot (parallel section)                        | `@stats`, `@activity` | NOT routable - passed to parent layout |
+| Slot Props      | Layout receives slots as props                          | `{ stats, activity }` | Render slots wherever you want         |
+| `loading.tsx`   | Independent loading state per slot                      | `@stats/loading.tsx`  | Each slot can have its own loading UI  |
+| `page.tsx`      | Default content for slot                                | `@stats/page.tsx`     | Shows when no nested route active      |
+
+### The Key Difference
+
+**Parallel Routes vs Route Groups:**
+
+| Aspect | Route Groups `()` | Parallel Routes `@` |
+|--------|-------------------|---------------------|
+| **URL routing** | ✅ Still routable | ❌ NOT routable |
+| **Purpose** | Organize files | Create slots for parallel rendering |
+| **Example** | `(auth)/login` → `/login` | `@stats` → No URL, it's a prop! |
+
+**The `@` prefix means:** "This is a slot, not a route. Pass it to parent layout as a prop."
+
+### The "Aha Moment"
+
+**Multiple sections loading independently:**
+
+```
+Visit: /dashboard
+
+Without Parallel Routes:
+  → Wait 5 seconds
+  → Everything appears at once
+
+With Parallel Routes:
+  → Page header appears instantly
+  → Stats loading skeleton (2s)
+  → Activity loading skeleton (4s)
+  → Stats data appears at 2s ⚡
+  → Stats is done, activity still loading!
+  → Activity data appears at 4s ⚡
+```
+
+**Key Insight:** Each slot loads independently - fast slots don't wait for slow ones!
+
+### Recommended Setup
+
+```typescript
+// Folder structure
+app/
+  dashboard/
+    @stats/
+      page.tsx          // Stats slot content
+      loading.tsx       // Stats loading state
+    @activity/
+      page.tsx          // Activity slot content
+      loading.tsx       // Activity loading state
+    layout.tsx          // Receives both slots as props
+    page.tsx            // Main content
+
+// 1. Stats Slot with async data fetching
+// app/dashboard/@stats/page.tsx
+async function getStats() {
+  await new Promise(resolve => setTimeout(resolve, 2000)); // 2s delay
+  return {
+    activeUsers: 1234,
+    revenue: 5678,
+  };
+}
+
+export default async function StatsSlot() {
+  const stats = await getStats();
+
+  return (
+    <div>
+      <h2>Key Metrics</h2>
+      <p>Active Users: {stats.activeUsers}</p>
+      <p>Revenue: ${stats.revenue}</p>
+    </div>
+  );
+}
+
+// 2. Stats Loading State
+// app/dashboard/@stats/loading.tsx
+export default function StatsLoading() {
+  return (
+    <div className="animate-pulse">
+      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+      <div className="h-6 bg-gray-300 rounded w-1/2" />
+    </div>
+  );
+}
+
+// 3. Activity Slot with slower loading
+// app/dashboard/@activity/page.tsx
+async function getActivity() {
+  await new Promise(resolve => setTimeout(resolve, 4000)); // 4s delay
+  return [
+    { id: 1, action: 'User signed up', time: '2m ago' },
+    { id: 2, action: 'New purchase', time: '5m ago' },
+  ];
+}
+
+export default async function ActivitySlot() {
+  const activities = await getActivity();
+
+  return (
+    <div>
+      <h2>Recent Activity</h2>
+      {activities.map(a => (
+        <p key={a.id}>{a.action} - {a.time}</p>
+      ))}
+    </div>
+  );
+}
+
+// 4. Activity Loading State
+// app/dashboard/@activity/loading.tsx
+export default function ActivityLoading() {
+  return (
+    <div className="animate-pulse">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="h-6 bg-gray-200 rounded mb-2" />
+      ))}
+    </div>
+  );
+}
+
+// 5. Layout receives slots as props
+// app/dashboard/layout.tsx
+type LayoutProps = {
+  children: React.ReactNode;
+  stats: React.ReactNode;      // From @stats
+  activity: React.ReactNode;   // From @activity
+};
+
+export default function DashboardLayout({ children, stats, activity }: LayoutProps) {
+  return (
+    <div>
+      {children}
+      <div className="grid grid-cols-2 gap-4">
+        <div>{stats}</div>      {/* Renders @stats slot */}
+        <div>{activity}</div>   {/* Renders @activity slot */}
+      </div>
+    </div>
+  );
+}
+
+// 6. Main page content
+// app/dashboard/page.tsx
+export default function DashboardPage() {
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <p>Welcome to your dashboard</p>
+    </div>
+  );
+}
+```
+
+### Key Learnings
+
+**✅ What Works:**
+
+- **`@` folders are NOT routes** - `@stats` doesn't create `/dashboard/stats` URL
+- **Slots are props** - Layout receives `stats` and `activity` as React props
+- **Independent loading states** - Each slot can have its own `loading.tsx`
+- **Server components by default** - Slots can be async server components
+- **Page.tsx required at route level** - Without `dashboard/page.tsx`, route returns 404
+- **All slots render simultaneously** - They're truly parallel, not sequential
+- **Slots can have error boundaries** - Each slot can have its own `error.tsx`
+
+**⚠️ Common Gotchas:**
+
+- **❌ WRONG: "@stats creates /dashboard/stats URL"**
+  - Reality: `@` folders are NOT routable - they're slots, not routes
+  - To access: The slot is rendered automatically in the layout, no URL needed
+- **Without page.tsx at route level → 404** - `dashboard/page.tsx` is required to make `/dashboard` a valid route
+  - Slots alone don't create routes!
+- **All slots wait for each other without loading.tsx** - Add `loading.tsx` per slot for independent loading
+  - Without it, Next.js waits for ALL slots before rendering anything
+- **Lazy loading vs Parallel Routes confusion** - They serve different purposes:
+  - Lazy Loading: Load JavaScript code on demand (code splitting)
+  - Parallel Routes: Load data independently with separate loading states
+- **Suspense alone can achieve similar results** - But Parallel Routes add:
+  - Clear folder structure (`@slots`)
+  - URL-based routing inside slots (Phase 3!)
+  - `default.tsx` fallback system
+
+**🎯 Parallel Routes vs Other Patterns:**
+
+| Pattern               | Purpose                               | Use Case                             |
+|-----------------------|---------------------------------------|--------------------------------------|
+| **Parallel Routes**   | Independent data loading & navigation | Dashboard with multiple data sources |
+| **Suspense**          | Loading boundaries                    | Simple loading states                |
+| **Lazy Loading**      | Code splitting                        | Heavy libraries (charts, maps)       |
+| **Route Groups `()`** | File organization                     | Group routes without affecting URLs  |
+
+**📊 Loading Behavior:**
+
+| Setup                          | Behavior                                                       |
+|--------------------------------|----------------------------------------------------------------|
+| No `loading.tsx` files         | All slots block each other - nothing shows until all are ready |
+| With `loading.tsx` per slot    | Each slot shows loading → data independently                   |
+| One slot without `loading.tsx` | That slot blocks everything else                               |
+
+**💡 Mental Model:**
+
+Think of slots like **picture frames on a wall**:
+- Each frame (`@stats`, `@activity`) holds a different picture
+- They're all visible at the same time (parallel)
+- Each picture can load at its own pace (independent)
+- The layout decides where to hang each frame
+
+**🎓 Common Confusion Points:**
+
+1. **"Can I visit /dashboard/stats directly?"**
+   - No! `@stats` is not a route, it's a slot
+   - The slot is automatically rendered when you visit `/dashboard`
+
+2. **"What's the difference between @stats and (stats)?"**
+   - `@stats` = Parallel slot (passed as prop to layout, NOT routable)
+   - `(stats)` = Route group (still routable, just organizational)
+
+3. **"Why do I need page.tsx if I have slots?"**
+   - Slots don't create routes - they're just sections within a route
+   - `page.tsx` is required to make the route exist
+
+4. **"Can I achieve the same with Suspense?"**
+   - For basic independent loading: Yes
+   - But Parallel Routes add nested navigation (Phase 3!), `default.tsx`, and better structure
+
+5. **"What happens if I don't provide loading.tsx?"**
+   - Next.js waits for all slots to finish before rendering anything
+   - User sees blank page until slowest slot completes
+
+**🔄 How It Works:**
+
+```typescript
+// Visit: /dashboard
+
+Step 1: Next.js checks for page.tsx
+  ✅ Found: dashboard/page.tsx
+
+Step 2: Look for layout.tsx
+  ✅ Found: dashboard/layout.tsx
+
+Step 3: Check layout props
+  - Sees `stats` prop → Look for @stats/page.tsx ✅
+  - Sees `activity` prop → Look for @activity/page.tsx ✅
+
+Step 4: Start rendering
+  - Render page.tsx (children) → Shows immediately
+  - Start @stats/page.tsx (async) → Shows loading.tsx
+  - Start @activity/page.tsx (async) → Shows loading.tsx
+
+Step 5: Data arrives
+  - @stats finishes (2s) → Replace loading with real data
+  - @activity finishes (4s) → Replace loading with real data
+```
+
+### Demo: `http://localhost:3000/intercepting-parallel-demo/parallel`
+
+**Test it yourself:**
+- Visit the page - see both loading skeletons
+- Stats appears at ~2 seconds
+- Activity still loading (independent!)
+- Activity appears at ~4 seconds
+- Refresh and observe the same behavior
+
+[Official Docs - Parallel Routes](https://nextjs.org/docs/app/building-your-application/routing/parallel-routes)
+
+</details>
+
+---
+
+<details>
+<summary><strong>8. Parallel Routes with Navigation</strong> - Independent navigation within slots using nested routes</summary>
+
+### Core Concepts
+
+| Feature                | Purpose                                         | Behavior                                            |
+|------------------------|-------------------------------------------------|-----------------------------------------------------|
+| Nested routes in slots | Navigate within a slot without affecting others | URL changes, slot content updates, other slots stay |
+| `default.tsx`          | Fallback when slot doesn't match current URL    | Required for routes that don't exist in all slots   |
+| `[...slug]/page.tsx`   | Catch-all for direct visits                     | Enables hard navigation to slot routes              |
+| Independent navigation | Each slot can navigate independently            | URL changes affect which slot content shows         |
+
+### The "Aha Moment"
+
+**Same page, different slot content based on URL:**
+
+```
+Visit: /settings/profile
+  URL: /settings/profile
+  @account slot: Shows profile/page.tsx ✅
+  @billing slot: Shows default.tsx (no profile route)
+  @notifications slot: Shows default.tsx (no profile route)
+
+Visit: /settings/payment-methods
+  URL: /settings/payment-methods
+  @account slot: Shows default.tsx (no payment-methods route)
+  @billing slot: Shows payment-methods/page.tsx ✅
+  @notifications slot: Shows default.tsx (no payment-methods route)
+```
+
+**Key Insight:** URL determines which slot shows what content, all slots stay visible!
+
+### Recommended Setup
+
+```typescript
+// Folder structure
+app/
+  settings/
+    @account/
+      page.tsx              // Default account view
+      profile/
+        page.tsx            // /settings/profile
+      security/
+        page.tsx            // /settings/security
+      default.tsx           // Fallback
+    @billing/
+      page.tsx              // Default billing view
+      payment-methods/
+        page.tsx            // /settings/payment-methods
+      invoices/
+        page.tsx            // /settings/invoices
+      default.tsx           // Fallback
+    @notifications/
+      page.tsx              // Default notifications view
+      preferences/
+        page.tsx            // /settings/preferences
+      default.tsx           // Fallback
+    layout.tsx              // Tab navigation + all 3 slots
+    page.tsx                // Main content
+    [...slug]/
+      page.tsx              // Catch-all for direct visits
+
+// 1. Account slot with nested routes
+// app/settings/@account/profile/page.tsx
+export default function ProfilePage() {
+  return (
+    <div>
+      <h3>Profile Settings</h3>
+      <input type="text" defaultValue="John Doe" />
+      <input type="email" defaultValue="john@example.com" />
+    </div>
+  );
+}
+
+// app/settings/@account/security/page.tsx
+export default function SecurityPage() {
+  return (
+    <div>
+      <h3>Security Settings</h3>
+      <button>Enable 2FA</button>
+      <button>Change Password</button>
+    </div>
+  );
+}
+
+// 2. Billing slot with nested routes
+// app/settings/@billing/payment-methods/page.tsx
+export default function PaymentMethodsPage() {
+  return (
+    <div>
+      <h3>Payment Methods</h3>
+      <div>Visa •••• 4242 - Expires 12/2025</div>
+      <button>Add Payment Method</button>
+    </div>
+  );
+}
+
+// 3. Default fallback (CRITICAL!)
+// app/settings/@account/default.tsx
+export default function AccountDefault() {
+  return (
+    <div>
+      <p>Account slot (default fallback)</p>
+    </div>
+  );
+}
+
+// 4. Layout with tab navigation
+// app/settings/layout.tsx
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+type LayoutProps = {
+  children: React.ReactNode;
+  account: React.ReactNode;
+  billing: React.ReactNode;
+  notifications: React.ReactNode;
+};
+
+const TABS = [
+  { name: "Profile", href: "/settings/profile" },
+  { name: "Security", href: "/settings/security" },
+  { name: "Payment", href: "/settings/payment-methods" },
+  { name: "Invoices", href: "/settings/invoices" },
+  { name: "Notifications", href: "/settings/preferences" },
+];
+
+export default function SettingsLayout({ children, account, billing, notifications }: LayoutProps) {
+  const pathname = usePathname();
+
+  return (
+    <div>
+      <h1>Settings</h1>
+
+      {/* Tab Navigation */}
+      <nav>
+        {TABS.map(tab => (
+          <Link
+            key={tab.href}
+            href={tab.href}
+            className={pathname === tab.href ? "active" : ""}
+          >
+            {tab.name}
+          </Link>
+        ))}
+      </nav>
+
+      {children}
+
+      {/* All 3 slots render simultaneously */}
+      <div className="grid grid-cols-3 gap-4">
+        <div>{account}</div>
+        <div>{billing}</div>
+        <div>{notifications}</div>
+      </div>
+    </div>
+  );
+}
+
+// 5. Catch-all route (REQUIRED for direct visits!)
+// app/settings/[...slug]/page.tsx
+export default function SettingsCatchAll() {
+  return null; // Slots will render instead
+}
+```
+
+### Key Learnings
+
+**✅ What Works:**
+
+- **Nested routes inside slots change slot content** - `/settings/profile` shows `@account/profile/page.tsx`
+- **URL changes, but all slots stay visible** - Independent navigation per slot
+- **`default.tsx` is CRITICAL** - Without it, 404 when a slot doesn't have the matching route
+- **Catch-all route enables direct visits** - `[...slug]/page.tsx` makes hard navigation work
+- **Client-side navigation works differently** - Clicking tabs from `/settings` works, direct URL visits need catch-all
+- **Each slot decides what to show based on URL** - Route matching happens per slot
+
+**⚠️ Common Gotchas:**
+
+- **❌ WRONG: "Direct visit /settings/profile works without catch-all"**
+  - Reality: **404 without `[...slug]/page.tsx`**
+  - Client-side navigation (clicking tabs) works ✅
+  - Direct URL visit or refresh fails ❌
+  - The catch-all makes Next.js recognize the route
+- **Without `default.tsx` → 404 on route mismatch** - If `@billing` doesn't have `profile/` route, visiting `/settings/profile` fails
+  - ALL slots must either have the route OR have `default.tsx`
+- **`page.tsx` vs `default.tsx` confusion**:
+  - `page.tsx` = Shows at base route (`/settings`)
+  - `default.tsx` = Fallback when nested route doesn't exist in this slot
+- **Catch-all returns `null`** - The actual content comes from slots, not the catch-all page
+  - The catch-all just makes the route valid
+
+**🎯 When Slots Match vs Don't Match:**
+
+| URL                         | @account           | @billing                   | @notifications         | Result                                          |
+|-----------------------------|--------------------|----------------------------|------------------------|-------------------------------------------------|
+| `/settings`                 | page.tsx           | page.tsx                   | page.tsx               | All show default content                        |
+| `/settings/profile`         | profile/page.tsx ✅ | default.tsx                | default.tsx            | Account shows profile, others show fallback     |
+| `/settings/payment-methods` | default.tsx        | payment-methods/page.tsx ✅ | default.tsx            | Billing shows payment, others show fallback     |
+| `/settings/preferences`     | default.tsx        | default.tsx                | preferences/page.tsx ✅ | Notifications shows prefs, others show fallback |
+
+**📊 Navigation Behavior:**
+
+| How You Navigate                     | Works?                 | Why                                |
+|--------------------------------------|------------------------|------------------------------------|
+| Click tab from `/settings`           | ✅ Yes                  | Client-side navigation             |
+| Direct visit `/settings/profile`     | ⚠️ Only with catch-all | Needs `[...slug]/page.tsx`         |
+| Refresh while on `/settings/profile` | ⚠️ Only with catch-all | Hard navigation requires catch-all |
+| Browser back/forward                 | ✅ Yes                  | Browser history works              |
+
+**💡 Mental Model:**
+
+Think of it like a **TV with multiple channels**:
+- The URL is the remote control (changes which channel/content shows)
+- Each slot is a TV screen (always visible)
+- Each screen can show different content based on the "channel" (URL)
+- `default.tsx` is the "no signal" screen when that channel doesn't exist
+
+**🎓 Common Confusion Points:**
+
+1. **"Why 404 on direct visit but works when clicking tabs?"**
+   - Client-side navigation doesn't need actual route files
+   - Direct visits need route files (catch-all) to tell Next.js the route exists
+   - This is a known limitation of parallel routes with nested navigation
+
+2. **"What's the difference between page.tsx and default.tsx in slots?"**
+   ```
+   @account/
+     page.tsx       → Shows at /settings (base route)
+     default.tsx    → Shows at /settings/profile (when account slot doesn't have profile/)
+     profile/
+       page.tsx     → Shows at /settings/profile (route exists)
+   ```
+
+3. **"Why do all slots stay visible when I click tabs?"**
+   - That's the point! Parallel routes keep all slots rendered
+   - Only the CONTENT of slots changes, not their visibility
+   - URL determines what each slot shows
+
+4. **"Can I hide a slot based on the URL?"**
+   - Yes! In the layout, conditionally render based on `usePathname()`
+   - But that defeats the purpose of parallel routes (showing multiple sections)
+
+5. **"What if I forget default.tsx in one slot?"**
+   - Visiting a URL that doesn't match in that slot → 404
+   - Always add `default.tsx` to every slot for safety
+
+**🔄 How Navigation Works:**
+
+```typescript
+// Click: Profile tab (/settings/profile)
+
+Step 1: URL changes to /settings/profile
+
+Step 2: Next.js checks each slot:
+  - @account: Does it have profile/page.tsx? ✅ YES → Render it
+  - @billing: Does it have profile/page.tsx? ❌ NO → Render default.tsx
+  - @notifications: Does it have profile/page.tsx? ❌ NO → Render default.tsx
+
+Step 3: Layout re-renders with updated slot content
+  - account prop = <ProfilePage />
+  - billing prop = <BillingDefault />
+  - notifications prop = <NotificationsDefault />
+
+Step 4: All slots visible, but showing different content
+```
+
+**🚀 Combining Concepts:**
+
+You now understand:
+- ✅ **Phase 1:** Intercepting Routes (modals on navigation)
+- ✅ **Phase 2:** Parallel Routes (simultaneous sections with independent loading)
+- ✅ **Phase 3:** Parallel Routes + Navigation (tabs with independent slot content)
+
+**Phase 4** will combine intercepting + parallel routes together for advanced patterns!
+
+### Demo: `http://localhost:3000/intercepting-parallel-demo/settings/profile`
+
+**Test it yourself:**
+- Click different tabs - watch URL change and slot content update
+- All 3 slots stay visible throughout navigation
+- Refresh page - works because of catch-all route
+- Direct visit different URLs - works!
+
+[Official Docs - Parallel Routes](https://nextjs.org/docs/app/building-your-application/routing/parallel-routes)
+
+</details>
+
+---
+
+<details>
 <summary><strong>12. nextUrl (URL vs nextUrl)</strong> - Why nextUrl is better for middleware/proxy</summary>
 
 ### Core Concepts
 
-| Feature | Purpose | Usage |
-|---------|---------|-------|
-| `nextUrl` | Next.js-specific URL object | `request.nextUrl` in Proxy/Middleware |
-| `pathname` | Path of the URL | `request.nextUrl.pathname` |
-| `searchParams` | Query parameters object | `request.nextUrl.searchParams.get('name')` |
-| `basePath` | Configured base path of app | `request.nextUrl.basePath` |
-| `locale` | Current locale (i18n) | `request.nextUrl.locale` |
+| Feature        | Purpose                     | Usage                                      |
+|----------------|-----------------------------|--------------------------------------------|
+| `nextUrl`      | Next.js-specific URL object | `request.nextUrl` in Proxy/Middleware      |
+| `pathname`     | Path of the URL             | `request.nextUrl.pathname`                 |
+| `searchParams` | Query parameters object     | `request.nextUrl.searchParams.get('name')` |
+| `basePath`     | Configured base path of app | `request.nextUrl.basePath`                 |
+| `locale`       | Current locale (i18n)       | `request.nextUrl.locale`                   |
 
 ### Why nextUrl > Native URL API?
 
 `nextUrl` is framework-aware. It automatically handles **basePath** and **locales**, stripping them from the `pathname` so your routing logic remains consistent regardless of deployment configuration.
 
-| Aspect | Native `new URL(request.url)` | Next.js `request.nextUrl` |
-|--------|-------------------------------|---------------------------|
+| Aspect       | Native `new URL(request.url)`                         | Next.js `request.nextUrl`  |
+|--------------|-------------------------------------------------------|----------------------------|
 | **pathname** | Includes basePath/locale (e.g., `/en/dashboard/page`) | Clean path (e.g., `/page`) |
-| **Parsing** | Manual string manipulation needed | Automatic |
+| **Parsing**  | Manual string manipulation needed                     | Automatic                  |
 
 ### Demo Output Comparison
 
@@ -1067,13 +1637,13 @@ GET /proxy-demo/test-sub-path 404 in 59ms (compile: 4ms, proxy.ts: 6ms, render: 
 
 ### Core Concepts
 
-| Feature | Purpose | File Location | When It Runs |
-|---------|---------|---------------|--------------|
-| `proxy.ts` | Intercept requests before page renders | Project root (same level as `app/`) | Before every matched request |
-| `NextResponse.redirect()` | Send HTTP redirect to different URL | Inside `proxy()` function | Browser sees new URL |
-| `NextResponse.rewrite()` | Serve different content, keep original URL | Inside `proxy()` function | Browser sees original URL |
-| `NextResponse.next()` | Pass through, don't modify request | Inside `proxy()` function | Continue to page normally |
-| `config.matcher` | Filter which routes trigger proxy | Export from `proxy.ts` | Limits proxy execution scope |
+| Feature                   | Purpose                                    | File Location                       | When It Runs                 |
+|---------------------------|--------------------------------------------|-------------------------------------|------------------------------|
+| `proxy.ts`                | Intercept requests before page renders     | Project root (same level as `app/`) | Before every matched request |
+| `NextResponse.redirect()` | Send HTTP redirect to different URL        | Inside `proxy()` function           | Browser sees new URL         |
+| `NextResponse.rewrite()`  | Serve different content, keep original URL | Inside `proxy()` function           | Browser sees original URL    |
+| `NextResponse.next()`     | Pass through, don't modify request         | Inside `proxy()` function           | Continue to page normally    |
+| `config.matcher`          | Filter which routes trigger proxy          | Export from `proxy.ts`              | Limits proxy execution scope |
 
 ### Key Distinction: redirect vs rewrite
 
@@ -1082,13 +1652,13 @@ GET /proxy-demo/test-sub-path 404 in 59ms (compile: 4ms, proxy.ts: 6ms, render: 
 - **Redirect:** You call a store, they say "We moved! Call this new number instead." You hang up and dial the new number. (You know you're calling somewhere else)
 - **Rewrite:** You call a store, they secretly forward your call to another department. You never know you're not talking to the original number. (Transparent to you)
 
-| Aspect | `redirect()` | `rewrite()` |
-|--------|--------------|-------------|
-| **Browser URL** | Changes to new URL | Stays the same |
-| **User perception** | "I was sent somewhere else" | "I'm still on the same page" |
-| **HTTP behavior** | 307/308 response → browser makes new request | Server proxies internally, single request |
-| **SEO** | Search engines follow to new URL | Search engines index original URL |
-| **Use when** | "Go there instead" | "Secretly serve this" |
+| Aspect              | `redirect()`                                 | `rewrite()`                               |
+|---------------------|----------------------------------------------|-------------------------------------------|
+| **Browser URL**     | Changes to new URL                           | Stays the same                            |
+| **User perception** | "I was sent somewhere else"                  | "I'm still on the same page"              |
+| **HTTP behavior**   | 307/308 response → browser makes new request | Server proxies internally, single request |
+| **SEO**             | Search engines follow to new URL             | Search engines index original URL         |
+| **Use when**        | "Go there instead"                           | "Secretly serve this"                     |
 
 ### Recommended Setup
 
@@ -1153,24 +1723,24 @@ The `request.url` provides the origin (protocol + host + port). Without it, you'
 
 **🎯 When to Use Each:**
 
-| Scenario | Use | Why |
-|----------|-----|-----|
-| Page permanently moved | `redirect()` | User should see new URL, SEO updated |
-| Auth redirect to login | `redirect()` | User knows they're going to login page |
-| A/B testing | `rewrite()` | Same URL serves different content to different users |
-| Multi-tenancy (`acme.app.com` → `/workspaces/acme`) | `rewrite()` | Hide internal structure, clean URLs |
-| Feature flags | `rewrite()` | `/dashboard` serves old or new version based on user segment |
-| Vanity URLs (`/pricing` → `/products/pricing-page`) | `rewrite()` | Clean public URL, organized internal structure |
-| API proxying | `rewrite()` | Hide backend implementation (`/api/data` → external API) |
+| Scenario                                            | Use          | Why                                                          |
+|-----------------------------------------------------|--------------|--------------------------------------------------------------|
+| Page permanently moved                              | `redirect()` | User should see new URL, SEO updated                         |
+| Auth redirect to login                              | `redirect()` | User knows they're going to login page                       |
+| A/B testing                                         | `rewrite()`  | Same URL serves different content to different users         |
+| Multi-tenancy (`acme.app.com` → `/workspaces/acme`) | `rewrite()`  | Hide internal structure, clean URLs                          |
+| Feature flags                                       | `rewrite()`  | `/dashboard` serves old or new version based on user segment |
+| Vanity URLs (`/pricing` → `/products/pricing-page`) | `rewrite()`  | Clean public URL, organized internal structure               |
+| API proxying                                        | `rewrite()`  | Hide backend implementation (`/api/data` → external API)     |
 
 **📊 Proxy vs Page-level Redirects:**
 
-| Aspect | Proxy (proxy.ts) | Page (redirect/permanentRedirect) |
-|--------|------------------|-----------------------------------|
-| **Runs when** | Before page renders | During page render |
-| **Access to** | Request headers, cookies, URL | Page props, searchParams |
-| **Scale** | All routes matching pattern | Single page |
-| **Best for** | Auth guards, rewrites, global patterns | Page-specific redirects |
+| Aspect        | Proxy (proxy.ts)                       | Page (redirect/permanentRedirect) |
+|---------------|----------------------------------------|-----------------------------------|
+| **Runs when** | Before page renders                    | During page render                |
+| **Access to** | Request headers, cookies, URL          | Page props, searchParams          |
+| **Scale**     | All routes matching pattern            | Single page                       |
+| **Best for**  | Auth guards, rewrites, global patterns | Page-specific redirects           |
 
 **🎓 Common Confusion Points:**
 
@@ -1211,14 +1781,14 @@ The `request.url` provides the origin (protocol + host + port). Without it, you'
 
 ### Core Concepts
 
-| Method | Where | Status Code | Type | Use Case |
-|--------|-------|-------------|------|----------|
-| `redirect()` | Server Component | **307** Temporary | HTTP redirect | Conditional redirects (auth, form submission) |
-| `redirect()` | **Server Action** | **303** See Other | HTTP redirect | After form POST (prevents resubmit dialog) |
-| `permanentRedirect()` | Server Component/Action | **308** Permanent | HTTP redirect | Permanent URL changes (renamed routes) |
-| `next.config.js` | Config file | 307 or 308 | HTTP redirect | Static redirects, bulk patterns, no page files needed |
-| `router.push()` | Client Component (useRouter) | N/A | Client-side navigation | Client-side programmatic navigation (no HTTP redirect!) |
-| `NextResponse.redirect()` | Middleware | Any | HTTP redirect | Conditional redirects at scale (auth, headers, cookies) |
+| Method                    | Where                        | Status Code       | Type                   | Use Case                                                |
+|---------------------------|------------------------------|-------------------|------------------------|---------------------------------------------------------|
+| `redirect()`              | Server Component             | **307** Temporary | HTTP redirect          | Conditional redirects (auth, form submission)           |
+| `redirect()`              | **Server Action**            | **303** See Other | HTTP redirect          | After form POST (prevents resubmit dialog)              |
+| `permanentRedirect()`     | Server Component/Action      | **308** Permanent | HTTP redirect          | Permanent URL changes (renamed routes)                  |
+| `next.config.js`          | Config file                  | 307 or 308        | HTTP redirect          | Static redirects, bulk patterns, no page files needed   |
+| `router.push()`           | Client Component (useRouter) | N/A               | Client-side navigation | Client-side programmatic navigation (no HTTP redirect!) |
+| `NextResponse.redirect()` | Middleware                   | Any               | HTTP redirect          | Conditional redirects at scale (auth, headers, cookies) |
 
 ### Key Distinction: HTTP Redirect vs Client-Side Navigation
 
@@ -1240,14 +1810,14 @@ router.push()        → Client-side navigation via JavaScript (no HTTP redirect
 
 ### Temporary (307) vs Permanent (308) Redirects
 
-| Aspect | 307 Temporary | 308 Permanent |
-|--------|---------------|---------------|
-| **Meaning** | "This redirect might change in the future" | "This redirect will NEVER change" |
-| **Search Engines (SEO)** | Keep indexing original URL | Update index to new URL (critical for SEO!) |
-| **Browser Caching** | Don't cache long-term | May cache aggressively |
-| **When to use** | Auth redirects, feature flags, A/B testing | Renamed routes, permanent URL restructuring |
-| **Next.js function** | `redirect()` | `permanentRedirect()` |
-| **next.config.js** | `permanent: false` | `permanent: true` |
+| Aspect                   | 307 Temporary                              | 308 Permanent                               |
+|--------------------------|--------------------------------------------|---------------------------------------------|
+| **Meaning**              | "This redirect might change in the future" | "This redirect will NEVER change"           |
+| **Search Engines (SEO)** | Keep indexing original URL                 | Update index to new URL (critical for SEO!) |
+| **Browser Caching**      | Don't cache long-term                      | May cache aggressively                      |
+| **When to use**          | Auth redirects, feature flags, A/B testing | Renamed routes, permanent URL restructuring |
+| **Next.js function**     | `redirect()`                               | `permanentRedirect()`                       |
+| **next.config.js**       | `permanent: false`                         | `permanent: true`                           |
 
 **Real-world examples:**
 
@@ -1375,23 +1945,23 @@ export function middleware(request: NextRequest) {
 
 **🎯 When to Use Each Approach:**
 
-| Scenario | Approach | Why |
-|----------|----------|-----|
-| User not authenticated → `/login` | `redirect()` in code | Conditional logic based on user state |
-| 100+ blog posts moved `/blog/*` → `/articles/*` | `next.config.js` with pattern | Bulk redirects, no need for 100 page files |
-| Renamed `/about-us` → `/about` permanently | `permanentRedirect()` in old page OR `next.config.js` | Either works; config cleaner (no page file) |
-| After form submission → success page | `redirect()` in Server Action | POST/Redirect/GET pattern (303) |
-| Auth check for entire app | `NextResponse.redirect()` in middleware | Runs before all pages, efficient |
-| Navigate on button click (client-side) | `router.push()` | Client-side, no page reload |
+| Scenario                                        | Approach                                              | Why                                         |
+|-------------------------------------------------|-------------------------------------------------------|---------------------------------------------|
+| User not authenticated → `/login`               | `redirect()` in code                                  | Conditional logic based on user state       |
+| 100+ blog posts moved `/blog/*` → `/articles/*` | `next.config.js` with pattern                         | Bulk redirects, no need for 100 page files  |
+| Renamed `/about-us` → `/about` permanently      | `permanentRedirect()` in old page OR `next.config.js` | Either works; config cleaner (no page file) |
+| After form submission → success page            | `redirect()` in Server Action                         | POST/Redirect/GET pattern (303)             |
+| Auth check for entire app                       | `NextResponse.redirect()` in middleware               | Runs before all pages, efficient            |
+| Navigate on button click (client-side)          | `router.push()`                                       | Client-side, no page reload                 |
 
 **📊 Status Code Reference:**
 
-| Status Code | Name | When It Appears | Meaning |
-|-------------|------|-----------------|---------|
-| **307** | Temporary Redirect | `redirect()` in Server Component | "Go to new URL, but this might change" |
-| **308** | Permanent Redirect | `permanentRedirect()` | "Go to new URL, and remember this forever" |
-| **303** | See Other | `redirect()` in Server Action | "Go to new URL, and change POST to GET" |
-| **200** | OK | `router.push()`, normal page load | Not a redirect - page loaded successfully |
+| Status Code | Name               | When It Appears                   | Meaning                                    |
+|-------------|--------------------|-----------------------------------|--------------------------------------------|
+| **307**     | Temporary Redirect | `redirect()` in Server Component  | "Go to new URL, but this might change"     |
+| **308**     | Permanent Redirect | `permanentRedirect()`             | "Go to new URL, and remember this forever" |
+| **303**     | See Other          | `redirect()` in Server Action     | "Go to new URL, and change POST to GET"    |
+| **200**     | OK                 | `router.push()`, normal page load | Not a redirect - page loaded successfully  |
 
 **🔄 How Redirects Work:**
 
