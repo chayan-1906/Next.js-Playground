@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import {FiCamera, FiLayout, FiSettings} from 'react-icons/fi';
+import {FiCamera, FiLayout, FiSettings, FiShoppingBag} from 'react-icons/fi';
 import {routes} from '@/lib/routes';
 
 function InterceptingParallelDemo() {
@@ -54,6 +54,21 @@ function InterceptingParallelDemo() {
                             </h2>
                             <p className={'text-gray-600 dark:text-gray-400'}>
                                 Manage your account, billing, and notification preferences
+                            </p>
+                        </div>
+                    </Link>
+
+                    {/* Products Demo Card */}
+                    <Link href={routes.productsDemo} className={'block'}>
+                        <div
+                            className={'group relative p-8 bg-gray-50 dark:bg-gray-900 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-800 hover:border-red-500 dark:hover:border-red-500'}>
+                            <FiShoppingBag
+                                className={'text-red-500 w-12 h-12 mb-4 transition-transform duration-300 group-hover:scale-110'}/>
+                            <h2 className={'text-2xl font-bold text-gray-900 dark:text-white mb-2'}>
+                                Products Demo
+                            </h2>
+                            <p className={'text-gray-600 dark:text-gray-400'}>
+                                A demo of product list and product details modal view
                             </p>
                         </div>
                     </Link>

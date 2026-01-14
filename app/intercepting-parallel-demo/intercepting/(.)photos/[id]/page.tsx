@@ -1,7 +1,7 @@
 "use client";
 
-import {use} from "react";
 import Image from 'next/image';
+import {Suspense, use} from "react";
 import {useRouter} from 'next/navigation';
 
 type PhotoModalProps = {
@@ -11,8 +11,15 @@ type PhotoModalProps = {
 };
 
 function PhotoModal({params}: PhotoModalProps) {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <PhotoModalWrapper params={params}/>
+        </Suspense>
+    );
+}
+
+function PhotoModalWrapper({params}: PhotoModalProps) {
     const router = useRouter();
-    // const {id} = params;
     const {id} = use(params);
 
     const photo = {
