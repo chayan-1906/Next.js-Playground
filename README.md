@@ -985,7 +985,7 @@ Phase 1 covered **Intercepting Routes** (modals on navigation).
 ---
 
 <details>
-<summary><strong>7. Parallel Routes</strong> - Render multiple page sections simultaneously with independent loading states</summary>
+<summary><strong>9. Parallel Routes</strong> - Render multiple page sections simultaneously with independent loading states</summary>
 
 ### Core Concepts
 
@@ -1247,7 +1247,7 @@ Step 5: Data arrives
   - @activity finishes (4s) → Replace loading with real data
 ```
 
-### Demo: `http://localhost:3000/intercepting-parallel-demo/parallel`
+### Demo (Phase 2): `http://localhost:3000/intercepting-parallel-demo/parallel`
 
 **Test it yourself:**
 - Visit the page - see both loading skeletons
@@ -1256,297 +1256,292 @@ Step 5: Data arrives
 - Activity appears at ~4 seconds
 - Refresh and observe the same behavior
 
-[Official Docs - Parallel Routes](https://nextjs.org/docs/app/building-your-application/routing/parallel-routes)
-
-</details>
-
 ---
 
-<details>
-<summary><strong>8. Parallel Routes with Navigation</strong> - Independent navigation within slots using nested routes</summary>
+### **Phase 3: Parallel Routes + Navigation (Tabs with Independent Slot Content)**
 
-### Core Concepts
+**Advanced Pattern:** Combine parallel routes with nested navigation inside slots!
 
-| Feature                | Purpose                                         | Behavior                                            |
-|------------------------|-------------------------------------------------|-----------------------------------------------------|
-| Nested routes in slots | Navigate within a slot without affecting others | URL changes, slot content updates, other slots stay |
-| `default.tsx`          | Fallback when slot doesn't match current URL    | Required for routes that don't exist in all slots   |
-| `[...slug]/page.tsx`   | Catch-all for direct visits                     | Enables hard navigation to slot routes              |
-| Independent navigation | Each slot can navigate independently            | URL changes affect which slot content shows         |
+**Use Case:** Settings page with tabs - each tab section loads independently:
+- **3 parallel slots:** `@account`, `@billing`, `@notifications`
+- **Nested routes inside slots:** `/profile`, `/security`, `/payment-methods`, etc.
+- **Tabbed navigation:** Click tabs to change slot content while keeping all 3 visible
 
-### The "Aha Moment"
-
-**Same page, different slot content based on URL:**
+#### Folder Structure (Phase 3)
 
 ```
-Visit: /settings/profile
-  URL: /settings/profile
-  @account slot: Shows profile/page.tsx ✅
-  @billing slot: Shows default.tsx (no profile route)
-  @notifications slot: Shows default.tsx (no profile route)
-
-Visit: /settings/payment-methods
-  URL: /settings/payment-methods
-  @account slot: Shows default.tsx (no payment-methods route)
-  @billing slot: Shows payment-methods/page.tsx ✅
-  @notifications slot: Shows default.tsx (no payment-methods route)
+app/intercepting-parallel-demo/settings/
+├── @account/
+│   ├── page.tsx                    ← Default account content
+│   ├── default.tsx                 ← Fallback when route doesn't match
+│   ├── profile/page.tsx            ← /settings/profile
+│   └── security/page.tsx           ← /settings/security
+├── @billing/
+│   ├── page.tsx
+│   ├── default.tsx
+│   ├── payment-methods/page.tsx    ← /settings/payment-methods
+│   └── invoices/page.tsx           ← /settings/invoices
+├── @notifications/
+│   ├── page.tsx
+│   ├── default.tsx
+│   └── preferences/page.tsx        ← /settings/preferences
+├── layout.tsx                      ← Renders tabs + all 3 slots
+├── page.tsx                        ← Main settings content
+└── [...slug]/page.tsx              ← Catch-all for direct visits
 ```
 
-**Key Insight:** URL determines which slot shows what content, all slots stay visible!
+#### Key Concepts (Phase 3)
 
-### Recommended Setup
+**1. `default.tsx` - The Fallback System** ⚠️
+
+When navigating to a route that doesn't exist in a slot, Next.js needs a fallback:
 
 ```typescript
-// Folder structure
-app/
-  settings/
-    @account/
-      page.tsx              // Default account view
-      profile/
-        page.tsx            // /settings/profile
-      security/
-        page.tsx            // /settings/security
-      default.tsx           // Fallback
-    @billing/
-      page.tsx              // Default billing view
-      payment-methods/
-        page.tsx            // /settings/payment-methods
-      invoices/
-        page.tsx            // /settings/invoices
-      default.tsx           // Fallback
-    @notifications/
-      page.tsx              // Default notifications view
-      preferences/
-        page.tsx            // /settings/preferences
-      default.tsx           // Fallback
-    layout.tsx              // Tab navigation + all 3 slots
-    page.tsx                // Main content
-    [...slug]/
-      page.tsx              // Catch-all for direct visits
-
-// 1. Account slot with nested routes
-// app/settings/@account/profile/page.tsx
-export default function ProfilePage() {
-  return (
-    <div>
-      <h3>Profile Settings</h3>
-      <input type="text" defaultValue="John Doe" />
-      <input type="email" defaultValue="john@example.com" />
-    </div>
-  );
-}
-
-// app/settings/@account/security/page.tsx
-export default function SecurityPage() {
-  return (
-    <div>
-      <h3>Security Settings</h3>
-      <button>Enable 2FA</button>
-      <button>Change Password</button>
-    </div>
-  );
-}
-
-// 2. Billing slot with nested routes
-// app/settings/@billing/payment-methods/page.tsx
-export default function PaymentMethodsPage() {
-  return (
-    <div>
-      <h3>Payment Methods</h3>
-      <div>Visa •••• 4242 - Expires 12/2025</div>
-      <button>Add Payment Method</button>
-    </div>
-  );
-}
-
-// 3. Default fallback (CRITICAL!)
-// app/settings/@account/default.tsx
+// @account/default.tsx
 export default function AccountDefault() {
-  return (
-    <div>
-      <p>Account slot (default fallback)</p>
-    </div>
-  );
+  return null; // Don't render anything for this slot
 }
+```
 
-// 4. Layout with tab navigation
-// app/settings/layout.tsx
+**Why needed?**
+- Visit `/settings/payment-methods` (billing route)
+- `@billing` slot has `payment-methods/page.tsx` ✅
+- `@account` slot has NO `payment-methods/page.tsx` ❌ → Needs `default.tsx`!
+
+**2. Catch-all Route `[...slug]/page.tsx`** 🎯
+
+Required for direct URL visits to work:
+
+```typescript
+// [...slug]/page.tsx
+export default function CatchAll() {
+  return null; // Just enables routing, layout handles rendering
+}
+```
+
+**Why needed?**
+- Direct visit `/settings/profile` would 404 without it
+- The catch-all makes the route valid, layout renders the slots
+
+**3. Tabbed Navigation with `usePathname()`**
+
+```typescript
 "use client";
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-type LayoutProps = {
-  children: React.ReactNode;
-  account: React.ReactNode;
-  billing: React.ReactNode;
-  notifications: React.ReactNode;
-};
-
-const TABS = [
-  { name: "Profile", href: "/settings/profile" },
-  { name: "Security", href: "/settings/security" },
-  { name: "Payment", href: "/settings/payment-methods" },
-  { name: "Invoices", href: "/settings/invoices" },
-  { name: "Notifications", href: "/settings/preferences" },
-];
-
-export default function SettingsLayout({ children, account, billing, notifications }: LayoutProps) {
+export default function SettingsLayout({ children, account, billing, notifications }) {
   const pathname = usePathname();
 
+  const tabs = [
+    { name: 'Profile', href: '/settings/profile' },
+    { name: 'Security', href: '/settings/security' },
+    { name: 'Payment', href: '/settings/payment-methods' },
+    { name: 'Invoices', href: '/settings/invoices' },
+    { name: 'Preferences', href: '/settings/preferences' },
+  ];
+
   return (
     <div>
-      <h1>Settings</h1>
-
-      {/* Tab Navigation */}
-      <nav>
-        {TABS.map(tab => (
+      {/* Tabs */}
+      <div className="flex gap-4">
+        {tabs.map(tab => (
           <Link
             key={tab.href}
             href={tab.href}
-            className={pathname === tab.href ? "active" : ""}
+            className={pathname === tab.href ? 'active' : ''}
           >
             {tab.name}
           </Link>
         ))}
-      </nav>
+      </div>
 
-      {children}
-
-      {/* All 3 slots render simultaneously */}
-      <div className="grid grid-cols-3 gap-4">
-        <div>{account}</div>
-        <div>{billing}</div>
-        <div>{notifications}</div>
+      {/* All 3 slots visible at once */}
+      <div className="grid grid-cols-3 gap-6">
+        {account}
+        {billing}
+        {notifications}
       </div>
     </div>
   );
 }
-
-// 5. Catch-all route (REQUIRED for direct visits!)
-// app/settings/[...slug]/page.tsx
-export default function SettingsCatchAll() {
-  return null; // Slots will render instead
-}
 ```
 
-### Key Learnings
-
-**✅ What Works:**
-
-- **Nested routes inside slots change slot content** - `/settings/profile` shows `@account/profile/page.tsx`
-- **URL changes, but all slots stay visible** - Independent navigation per slot
-- **`default.tsx` is CRITICAL** - Without it, 404 when a slot doesn't have the matching route
-- **Catch-all route enables direct visits** - `[...slug]/page.tsx` makes hard navigation work
-- **Client-side navigation works differently** - Clicking tabs from `/settings` works, direct URL visits need catch-all
-- **Each slot decides what to show based on URL** - Route matching happens per slot
-
-**⚠️ Common Gotchas:**
-
-- **❌ WRONG: "Direct visit /settings/profile works without catch-all"**
-  - Reality: **404 without `[...slug]/page.tsx`**
-  - Client-side navigation (clicking tabs) works ✅
-  - Direct URL visit or refresh fails ❌
-  - The catch-all makes Next.js recognize the route
-- **Without `default.tsx` → 404 on route mismatch** - If `@billing` doesn't have `profile/` route, visiting `/settings/profile` fails
-  - ALL slots must either have the route OR have `default.tsx`
-- **`page.tsx` vs `default.tsx` confusion**:
-  - `page.tsx` = Shows at base route (`/settings`)
-  - `default.tsx` = Fallback when nested route doesn't exist in this slot
-- **Catch-all returns `null`** - The actual content comes from slots, not the catch-all page
-  - The catch-all just makes the route valid
-
-**🎯 When Slots Match vs Don't Match:**
-
-| URL                         | @account           | @billing                   | @notifications         | Result                                          |
-|-----------------------------|--------------------|----------------------------|------------------------|-------------------------------------------------|
-| `/settings`                 | page.tsx           | page.tsx                   | page.tsx               | All show default content                        |
-| `/settings/profile`         | profile/page.tsx ✅ | default.tsx                | default.tsx            | Account shows profile, others show fallback     |
-| `/settings/payment-methods` | default.tsx        | payment-methods/page.tsx ✅ | default.tsx            | Billing shows payment, others show fallback     |
-| `/settings/preferences`     | default.tsx        | default.tsx                | preferences/page.tsx ✅ | Notifications shows prefs, others show fallback |
-
-**📊 Navigation Behavior:**
-
-| How You Navigate                     | Works?                 | Why                                |
-|--------------------------------------|------------------------|------------------------------------|
-| Click tab from `/settings`           | ✅ Yes                  | Client-side navigation             |
-| Direct visit `/settings/profile`     | ⚠️ Only with catch-all | Needs `[...slug]/page.tsx`         |
-| Refresh while on `/settings/profile` | ⚠️ Only with catch-all | Hard navigation requires catch-all |
-| Browser back/forward                 | ✅ Yes                  | Browser history works              |
-
-**💡 Mental Model:**
-
-Think of it like a **TV with multiple channels**:
-- The URL is the remote control (changes which channel/content shows)
-- Each slot is a TV screen (always visible)
-- Each screen can show different content based on the "channel" (URL)
-- `default.tsx` is the "no signal" screen when that channel doesn't exist
-
-**🎓 Common Confusion Points:**
-
-1. **"Why 404 on direct visit but works when clicking tabs?"**
-   - Client-side navigation doesn't need actual route files
-   - Direct visits need route files (catch-all) to tell Next.js the route exists
-   - This is a known limitation of parallel routes with nested navigation
-
-2. **"What's the difference between page.tsx and default.tsx in slots?"**
-   ```
-   @account/
-     page.tsx       → Shows at /settings (base route)
-     default.tsx    → Shows at /settings/profile (when account slot doesn't have profile/)
-     profile/
-       page.tsx     → Shows at /settings/profile (route exists)
-   ```
-
-3. **"Why do all slots stay visible when I click tabs?"**
-   - That's the point! Parallel routes keep all slots rendered
-   - Only the CONTENT of slots changes, not their visibility
-   - URL determines what each slot shows
-
-4. **"Can I hide a slot based on the URL?"**
-   - Yes! In the layout, conditionally render based on `usePathname()`
-   - But that defeats the purpose of parallel routes (showing multiple sections)
-
-5. **"What if I forget default.tsx in one slot?"**
-   - Visiting a URL that doesn't match in that slot → 404
-   - Always add `default.tsx` to every slot for safety
-
-**🔄 How Navigation Works:**
-
-```typescript
-// Click: Profile tab (/settings/profile)
-
-Step 1: URL changes to /settings/profile
-
-Step 2: Next.js checks each slot:
-  - @account: Does it have profile/page.tsx? ✅ YES → Render it
-  - @billing: Does it have profile/page.tsx? ❌ NO → Render default.tsx
-  - @notifications: Does it have profile/page.tsx? ❌ NO → Render default.tsx
-
-Step 3: Layout re-renders with updated slot content
-  - account prop = <ProfilePage />
-  - billing prop = <BillingDefault />
-  - notifications prop = <NotificationsDefault />
-
-Step 4: All slots visible, but showing different content
-```
-
-**🚀 Combining Concepts:**
-
-You now understand:
-- ✅ **Phase 1:** Intercepting Routes (modals on navigation)
-- ✅ **Phase 2:** Parallel Routes (simultaneous sections with independent loading)
-- ✅ **Phase 3:** Parallel Routes + Navigation (tabs with independent slot content)
-
-**Phase 4** will combine intercepting + parallel routes together for advanced patterns!
-
-### Demo: `http://localhost:3000/intercepting-parallel-demo/settings/profile`
+### Demo (Phase 3): `http://localhost:3000/intercepting-parallel-demo/settings/profile`
 
 **Test it yourself:**
 - Click different tabs - watch URL change and slot content update
 - All 3 slots stay visible throughout navigation
 - Refresh page - works because of catch-all route
 - Direct visit different URLs - works!
+
+---
+
+### **Phase 4: Combining Intercepting Routes + Parallel Routes** 🎯
+
+**The Power Move:** Use **both** intercepting routes AND parallel routes together!
+
+**Use Case:** E-commerce product modal with 3 independent sections (details, reviews, related products):
+- **Click from grid** → Modal with 3 parallel slots
+- **Direct visit/refresh** → Full page with same 3 slots
+- **Same data, different layouts!**
+
+#### Folder Structure (Phase 4)
+
+```
+app/intercepting-parallel-demo/products-demo/
+├── page.tsx                               ← Product grid
+├── products/[productId]/                  ← Full page route
+│   ├── @details/page.tsx                  ← Product details slot
+│   ├── @reviews/page.tsx                  ← Reviews slot
+│   ├── @related/page.tsx                  ← Related products slot
+│   ├── layout.tsx                         ← Full page layout (vertical stack)
+│   └── page.tsx                           ← Main content
+└── (.)products/[productId]/               ← Intercepting route (MODAL!)
+    ├── @details/page.tsx                  ← Same details slot
+    ├── @reviews/page.tsx                  ← Same reviews slot
+    ├── @related/page.tsx                  ← Same related slot
+    ├── layout.tsx                         ← MODAL layout (backdrop + centered)
+    └── page.tsx                           ← Main content
+```
+
+#### Key Concepts (Phase 4)
+
+**1. Shared Components Pattern** ✅
+
+Both routes use the SAME slot content by importing shared components:
+
+```typescript
+// components/intercepting-parallel-demo/ProductDetailsContent.tsx
+export async function ProductDetailsContent({ params }: Props) {
+  await new Promise(resolve => setTimeout(resolve, 2000)); // Independent 2s delay
+  const { productId } = await params;
+  const product = await getProduct('general', productId);
+  return (/* Product details UI */);
+}
+
+// Both slots import the same component:
+// products/[productId]/@details/page.tsx
+// (.)products/[productId]/@details/page.tsx
+import { ProductDetailsContent } from '@/components/intercepting-parallel-demo/ProductDetailsContent';
+
+export default async function DetailsSlot({ params }: Props) {
+  return (
+    <Suspense fallback={<div>Loading product...</div>}>
+      <ProductDetailsContent params={params} />
+    </Suspense>
+  );
+}
+```
+
+**Why?** No code duplication! Same data, same UI, different layouts.
+
+**2. Independent Loading States** ⏱️
+
+Each slot has its own loading delay:
+- `@details`: 2s delay
+- `@reviews`: 3s delay
+- `@related`: 4s delay
+
+**Result:** Progressive rendering - users see content as it loads!
+
+**3. The ONLY Difference: Layout** 🎨
+
+```typescript
+// products/[productId]/layout.tsx (Full Page)
+export default function ProductDetailsLayout({ children, details, reviews, related }) {
+  return (
+    <div className="p-4 flex flex-col gap-6">
+      {children}
+      {details}
+      {reviews}
+      {related}
+    </div>
+  );
+}
+
+// (.)products/[productId]/layout.tsx (MODAL)
+"use client"; // ← Must be client component for useRouter!
+
+export default function ProductDetailsLayout({ children, details, reviews, related }) {
+  const router = useRouter();
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60" onClick={(e) => {
+      if (e.target === e.currentTarget) router.back(); // Click outside to close
+    }}>
+      <div className="relative max-w-6xl max-h-[90vh] overflow-y-auto">
+        <button onClick={() => router.back()}>✕</button>
+        <div className="p-6 flex flex-col gap-6">
+          {children}
+          {details}
+          {reviews}
+          {related}
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+**Key Differences:**
+- Full page: Server component, simple stack
+- Modal: Client component (`"use client"`), backdrop, close handlers
+
+**4. React `cache()` for Performance** ⚡
+
+```typescript
+import { cache } from 'react';
+
+// Cached function - prevents duplicate API calls
+const getProduct = cache(async (collection: string, productId: string) => {
+  const res = await fetch(`/api/amazon?collection=${collection}&productId=${productId}`);
+  return res.json();
+});
+```
+
+**Result:** When `@details` and `@reviews` both call `getProduct()`, only 1 API call is made!
+
+#### How It Works (Phase 4)
+
+| Action | Route | Layout | Behavior |
+|--------|-------|--------|----------|
+| Click product from grid | `(.)products/[productId]` | Modal layout | Intercepting route catches navigation → Shows modal |
+| Direct visit URL | `products/[productId]` | Full page layout | No interception → Shows full page |
+| Refresh while on product | `products/[productId]` | Full page layout | No navigation context → Shows full page |
+| Click X or outside modal | - | - | `router.back()` → Returns to grid |
+
+### Demo (Phase 4): `http://localhost:3000/intercepting-parallel-demo/products-demo`
+
+**Test it yourself:**
+
+1. **Click vs Direct Visit:**
+   - Click product from grid → Should show MODAL
+   - Copy URL → Paste in new tab → Should show FULL PAGE
+   - Click product → Refresh page → Should show FULL PAGE
+
+2. **Modal Interaction:**
+   - Click X button → Should return to grid
+   - Click outside modal → Should return to grid
+   - Browser back button → Should return to grid
+
+3. **Independent Slot Loading:**
+   - Watch slots load progressively: Details (2s) → Reviews (3s) → Related (4s)
+   - Modal and full page both show same 3 slots with independent loading
+
+4. **Same Components, Different Layouts:**
+   - Modal: Centered with backdrop, close button
+   - Full page: Vertical stack, no backdrop
+
+---
+
+### 🚀 Summary: All 4 Phases
+
+You now understand:
+- ✅ **Phase 1:** Intercepting Routes (modals on navigation) - See section 8
+- ✅ **Phase 2:** Parallel Routes (simultaneous sections with independent loading)
+- ✅ **Phase 3:** Parallel Routes + Navigation (tabs with independent slot content)
+- ✅ **Phase 4:** Combining Intercepting + Parallel Routes (modal with multiple independent slots)
 
 [Official Docs - Parallel Routes](https://nextjs.org/docs/app/building-your-application/routing/parallel-routes)
 

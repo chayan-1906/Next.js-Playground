@@ -22,6 +22,8 @@ const routes = {
     settingsPaymentDemo: `/intercepting-parallel-demo/settings/payment-methods`,
     settingsInvoicesDemo: `/intercepting-parallel-demo/settings/invoices`,
     settingsPreferencesDemo: `/intercepting-parallel-demo/settings/preferences`,
+    productsDemo: `/intercepting-parallel-demo/products-demo/products`,
+    productDemo: (productId: string) => `/intercepting-parallel-demo/products-demo/products/${productId}`,
 
     proxyDemo: '/proxy-demo',
 
