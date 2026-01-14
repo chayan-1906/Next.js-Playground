@@ -1,4 +1,4 @@
-function ParallelPage() {
+function ProductDetailsPage() {
     return (
         <div className={'p-8 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-700'}>
             <h1 className={'text-2xl font-bold'}>Parallel Routes Dashboard View</h1>
@@ -7,4 +7,4 @@ function ParallelPage() {
     );
 }
 
-export default ParallelPage;
+export default ProductDetailsPage;
