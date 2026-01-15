@@ -13,6 +13,14 @@ const nextConfig: NextConfig = {
                 protocol: 'https',
                 hostname: 'media.licdn.com',
             },
+            {
+                protocol: 'https',
+                hostname: 'picsum.photos',
+            },
+            {
+                protocol: 'https',
+                hostname: 'm.media-amazon.com',
+            },
         ],
     },
     async redirects() {
