@@ -1,11 +1,14 @@
 import {cache} from "react";
 import {Db, MongoClient, ObjectId} from "mongodb";
+import {headers} from "next/headers";
 import {Product} from "@/types/amazon";
 import {connectDB, getClient} from "@/lib/connectDB";
 
 const DATABASE = 'amazon';
 
 const getProducts = cache(async (collection: string): Promise<Product[]> => {
+    // Signal dynamic rendering before any Date/time operations (MongoDB uses Date internally)
+    await headers();
     await connectDB();
 
     const client: MongoClient = getClient();
@@ -18,6 +21,8 @@ const getProducts = cache(async (collection: string): Promise<Product[]> => {
 });
 
 const getProduct = cache(async (collection: string, productId: string): Promise<Product> => {
+    // Signal dynamic rendering before any Date/time operations
+    await headers();
     await connectDB();
 
     const client: MongoClient = getClient();
