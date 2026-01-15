@@ -1491,16 +1491,22 @@ export default function ProductDetailsLayout({ children, details, reviews, relat
 **4. React `cache()` for Performance** ⚡
 
 ```typescript
+// lib/queries/amazon.queries.ts
 import { cache } from 'react';
+import { connectDB, getClient } from "@/lib/connectDB";
 
-// Cached function - prevents duplicate API calls
-const getProduct = cache(async (collection: string, productId: string) => {
-  const res = await fetch(`/api/amazon?collection=${collection}&productId=${productId}`);
-  return res.json();
+// Cached function - prevents duplicate MongoDB queries across slots
+export const getProduct = cache(async (collection: string, productId: string) => {
+  await connectDB();
+  const db = getClient().db('amazon');
+  const document = await db.collection(collection).findOne({ 
+    _id: new ObjectId(productId) 
+  });
+  return JSON.parse(JSON.stringify(document));
 });
 ```
 
-**Result:** When `@details` and `@reviews` both call `getProduct()`, only 1 API call is made!
+**Result:** When `@details` and `@reviews` slots both call `getProduct()`, only **1 MongoDB query** is executed, even though they load independently!
 
 #### How It Works (Phase 4)
 
