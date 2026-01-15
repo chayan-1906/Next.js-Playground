@@ -1,9 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import {FiShoppingBag} from "react-icons/fi";
+import {routes} from "@/lib/routes";
 import {Product} from "@/types/amazon";
 import {getProducts} from "@/lib/queries/amazon.queries";
-import {routes} from "@/lib/routes";
 
 async function ProductRelatedContent({params}: { params: Promise<{ productId: string }> }) {
     // Simulate 4s delay for independent loading

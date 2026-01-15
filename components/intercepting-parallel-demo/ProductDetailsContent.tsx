@@ -1,12 +1,13 @@
 import Image from "next/image";
 import {FiPackage, FiTag} from "react-icons/fi";
+import {Product} from "@/types/amazon";
 import {getProduct} from "@/lib/queries/amazon.queries";
 
 async function ProductDetailsContent({params}: { params: Promise<{ productId: string }> }) {
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     const {productId} = await params;
-    const product = await getProduct('general', productId);
+    const product: Product = await getProduct('general', productId);
     const {asin, image, title, price, category} = product.data;
 
     return (

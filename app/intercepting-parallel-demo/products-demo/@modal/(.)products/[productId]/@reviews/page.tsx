@@ -6,7 +6,7 @@ async function ReviewsSlot({params}: { params: Promise<{ productId: string }> })
         <Suspense fallback={<div>Loading reviews...</div>}>
             <ProductReviewsContent params={params}/>
         </Suspense>
-    )
+    );
 }
 
 export default ReviewsSlot;
