@@ -1,11 +1,19 @@
 "use client";
 
-import React from "react";
 import {X} from "lucide-react";
+import React, {useEffect} from "react";
 import {useRouter} from "next/navigation";
 
 function ProductDetailsLayout({children, details, related, reviews}: { children: React.ReactNode; details: React.ReactNode; related: React.ReactNode; reviews: React.ReactNode; }) {
     const router = useRouter();
+
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
 
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         // Only close if clicking the backdrop itself, not the modal content
