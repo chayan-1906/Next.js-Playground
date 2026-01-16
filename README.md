@@ -1491,16 +1491,22 @@ export default function ProductDetailsLayout({ children, details, reviews, relat
 **4. React `cache()` for Performance** ⚡
 
 ```typescript
+// lib/queries/amazon.queries.ts
 import { cache } from 'react';
+import { connectDB, getClient } from "@/lib/connectDB";
 
-// Cached function - prevents duplicate API calls
-const getProduct = cache(async (collection: string, productId: string) => {
-  const res = await fetch(`/api/amazon?collection=${collection}&productId=${productId}`);
-  return res.json();
+// Cached function - prevents duplicate MongoDB queries across slots
+export const getProduct = cache(async (collection: string, productId: string) => {
+  await connectDB();
+  const db = getClient().db('amazon');
+  const document = await db.collection(collection).findOne({ 
+    _id: new ObjectId(productId) 
+  });
+  return JSON.parse(JSON.stringify(document));
 });
 ```
 
-**Result:** When `@details` and `@reviews` both call `getProduct()`, only 1 API call is made!
+**Result:** When `@details` and `@reviews` slots both call `getProduct()`, only **1 MongoDB query** is executed, even though they load independently!
 
 #### How It Works (Phase 4)
 
@@ -2037,6 +2043,513 @@ Think of redirect types based on your intention:
 - Server Action (303): `/redirect-demo/server-action-redirect`
 
 [Official Docs](https://nextjs.org/docs/app/guides/redirecting)
+
+</details>
+
+---
+
+<details>
+<summary><strong>23. generateStaticParams with Cache Components</strong> - Build-time cache warming, PPR vs fully static, and the new Next.js 16 mental model</summary>
+
+### Core Concepts
+
+| Feature                  | Purpose                                                 | Usage                           | Next.js 16 Behavior                                   |
+|--------------------------|--------------------------------------------------------|---------------------------------|-------------------------------------------------------|
+| `generateStaticParams()` | Pre-warm cache at build time for dynamic routes         | Export from `page.tsx`          | Cache warming hint, NOT static HTML generation        |
+| `"use cache"`            | Enable caching for function/component output            | Directive in function body      | Runtime cache with revalidation (default: 15min, 1yr) |
+| `cacheComponents: true`  | Enable Cache Components (PPR + granular cache control)  | `next.config.ts`                | Disables old route segment configs                    |
+| `◐` (PPR symbol)         | Partial Prerender - static shell + dynamic content      | Build output indicator          | Default with Cache Components enabled                 |
+| `○` (Static symbol)      | Fully static - complete HTML at build time              | Build output indicator          | Not achievable with Cache Components (old model only) |
+| `dynamicParams`          | Control access to params not in `generateStaticParams`  | `export const dynamicParams`    | ❌ NOT compatible with Cache Components               |
+| `dynamic`                | Force route rendering behavior                          | `export const dynamic`          | ❌ NOT compatible with Cache Components               |
+
+### The Fundamental Shift: Old vs New Model
+
+**This is THE critical mental model shift in Next.js 16:**
+
+#### Old Model (Next.js 15 and earlier, without Cache Components)
+
+```
+generateStaticParams → Fully Static HTML at BUILD time
+
+Build time (products 1-6):
+  🔨 Run getProduct(1) → Bake into HTML file
+  🔨 Run getProduct(2) → Bake into HTML file
+  ⏱️ Takes: 6 products × 2s = 12 seconds
+
+Runtime (first user visit):
+  ✅ Product 1 → 0 delay (HTML already exists)
+  ✅ Product 7 (not in list) → 2s delay OR 404 (if dynamicParams=false)
+
+Symbol: ○ (Fully Static)
+```
+
+#### New Model (Next.js 16, with Cache Components)
+
+```
+generateStaticParams → Cache Warming at BUILD time
+
+Build time (products 1-6):
+  🔥 Run getProduct(1) → Populate cache → Store in build artifact
+  🔥 Run getProduct(2) → Populate cache → Store in build artifact
+  ⏱️ Takes: ~10 seconds (parallel execution, not sequential)
+
+Runtime (when server starts):
+  🔥 Product 7 pre-warms in background (if time permits)
+
+Runtime (first user visit):
+  ✅ Product 1 → 0 delay (cache hit from build time)
+  ✅ Product 7 → 0 delay if pre-warmed, OR 5s delay (cache miss)
+
+Symbol: ◐ (Partial Prerender - static shell + cached data)
+```
+
+### Key Insight: generateStaticParams Role Changed
+
+| Aspect            | Old Model (No Cache Components)      | New Model (Cache Components)              |
+|-------------------|--------------------------------------|-------------------------------------------|
+| **What it does**  | Generates static HTML files          | Pre-warms cache at build time             |
+| **Products 1-6**  | Fully baked HTML (0 delay always)    | Cache populated at build (0 delay always) |
+| **Product 7**     | 404 or on-demand generation          | Cached on-demand at runtime               |
+| **Build output**  | `○` Static                           | `◐` PPR (Partial Prerender)              |
+| **Route configs** | ✅ `dynamic`, `dynamicParams` work   | ❌ Incompatible, must remove              |
+
+### The "use cache" Directive
+
+**What is it?**
+- A directive that marks a function's output as cacheable
+- Creates a **runtime cache** (not build-time static generation)
+- Default revalidation: 15 minutes (cache), 1 year (expire)
+
+**How to use:**
+
+```tsx
+// Mark function as cacheable
+async function getProduct(id: string) {
+    "use cache";  // ← Cache directive
+    await new Promise(resolve => setTimeout(resolve, 5000)); // 5s delay
+
+    const products = [/* ... */];
+    return products.find(p => p.id === id);
+}
+
+// First call: 5s delay → cache populated
+// Subsequent calls (within 15min): 0s delay → cache hit
+// After 15min: 5s delay → cache refreshed
+```
+
+**Key behavior:**
+```
+Visit Product 1 (first time):
+  → getProduct('1') runs → 5s delay → result cached
+
+Visit Product 1 (again, within 15min):
+  → Cache hit → 0s delay
+
+Visit Product 1 (after 15min):
+  → Cache expired → getProduct('1') runs → 5s delay → cache refreshed
+```
+
+### What We Can't Do with Cache Components
+
+**ALL old route segment configs are incompatible:**
+
+```tsx
+// ❌ Does NOT work with cacheComponents: true
+export const dynamic = 'force-static';       // Build error
+export const dynamicParams = false;          // Build error
+export const revalidate = 60;                // Build error
+
+// Error message:
+// "Route segment config 'dynamic' is not compatible with
+//  nextConfig.cacheComponents. Please remove it."
+```
+
+**Why?** Cache Components represents a **component-level** caching model, not route-level configs:
+
+```tsx
+// Old approach (route-level, all-or-nothing):
+export const dynamic = 'force-static';  // Entire route is static
+
+// New approach (component-level, granular):
+async function getData() {
+    "use cache";  // Just this function is cached
+    // ...
+}
+```
+
+### Common Confusion #1: Why Still PPR Symbol?
+
+**Initial confusion:**
+> "I removed Suspense and added 'use cache', but build output still shows `◐` (PPR), not `○` (static). Why?"
+
+**Answer:**
+
+The `◐` symbol with Cache Components means:
+- **Static shell** generated at build time (page structure)
+- **Data fetching** cached at runtime (first build time for generateStaticParams, then runtime)
+
+The `○` symbol is from the **old model** - it means fully static HTML with data baked in. With Cache Components, you **cannot** achieve `○` because:
+- Cache Components fundamentally operates on **caching**, not **static generation**
+- Even with `"use cache"`, data is cached at runtime, not baked into HTML at build time
+
+**Mental model shift:**
+```
+Old: ○ = Fully static HTML with data
+New: ◐ = Static shell + cached data (this is the new "static")
+```
+
+### Common Confusion #2: Build Time Expectation
+
+**Initial confusion:**
+> "With 6 products × 5s delay = 30s expected build time, but it only took ~10s. Why?"
+
+**Answer:**
+
+Build logs reveal **parallel execution**:
+
+```
+🔥 getProduct() called for ID: 1 at 15:34:38.750Z
+🔥 getProduct() called for ID: 2 at 15:34:38.756Z  ← Started almost simultaneously!
+✅ getProduct() completed for ID: 1 at 15:34:43.753Z (5s later)
+✅ getProduct() completed for ID: 2 at 15:34:43.757Z (5s later)
+🔥 getProduct() called for ID: 3,5,6,4 at 15:34:43.795Z  ← Next batch starts!
+✅ All completed at 15:34:48.797Z
+```
+
+**Key insight:**
+- Next.js runs `generateStaticParams` items in **parallel batches** (using 9 workers)
+- Not sequential: 6 × 5s = 30s
+- Parallel: 2 batches × 5s = ~10s
+
+### Common Confusion #3: Product 7 Instant After Product 1
+
+**Mysterious behavior discovered:**
+
+```
+Test 1: Visit Product 1 first
+  → Product 1: Instant ✓
+  → Product 7: Instant ❓ (Why? It's not in generateStaticParams!)
+
+Test 2: Visit Product 7 first
+  → Product 7: 5s delay ✓ (Expected)
+  → Product 1: Instant ✓ (Expected)
+```
+
+**What's happening?**
+
+When you run `npm start` (production server):
+
+```
+Server startup:
+  → Next.js starts listening on port 3000
+  → Background: Pre-warming Product 7 cache (discovered in logs!)
+
+Server logs:
+🔥 getProduct() called for ID: 7 at 15:37:38.078Z  ← Pre-warming started
+✅ getProduct() completed for ID: 7 at 15:37:43.079Z  ← 5s later
+
+Timeline:
+  0s: npm start (server starting)
+  5s: Product 7 cache warmed
+
+If you visit Product 7:
+  - Before 5s: 5s delay (cache miss)
+  - After 5s: Instant (cache hit from pre-warming)
+```
+
+**Why pre-warm Product 7?**
+- Next.js may pre-warm recent/popular routes in background
+- Implementation detail, not documented behavior
+- Race condition: Your first visit might beat the pre-warming
+
+### Common Confusion #4: Removing Suspense Causes Error
+
+**Initial attempt:**
+```tsx
+// Removed Suspense, kept "use cache"
+async function ProductPage({ params }) {
+    const { productId } = await params;
+    const product = await getProduct(productId);
+    // ... render
+}
+```
+
+**Error:**
+```
+Blocking Route Error
+
+Data that blocks navigation was accessed outside of <Suspense>
+
+This delays the entire page from rendering, resulting in a slow user experience.
+
+To fix this, you can either:
+1. Provide a fallback UI using <Suspense> around this component
+2. Move the asynchronous await into a Cache Component ("use cache")
+```
+
+**Why this error?**
+
+With Cache Components enabled, Next.js requires **explicit caching intent**:
+
+1. **Option 1:** Wrap in Suspense → "This data is dynamic, stream it"
+2. **Option 2:** Use `"use cache"` → "This data should be cached"
+
+Without either, Next.js doesn't know: "Is this data dynamic or cacheable?"
+
+**The fix:** Add `"use cache"` to the data fetching function:
+
+```tsx
+async function getProduct(id: string) {
+    "use cache";  // ← Tells Next.js: "Cache this!"
+    // ... fetch logic
+}
+```
+
+### Common Confusion #5: Can't Prevent Access to Product 7
+
+**Expectation from old model:**
+```tsx
+export const dynamicParams = false;  // Product 7 should 404
+```
+
+**Reality with Cache Components:**
+```
+Build error: "Route segment config 'dynamicParams' is not compatible
+             with nextConfig.cacheComponents"
+```
+
+**Why?**
+
+Cache Components operates on a **different philosophy**:
+- **Old model:** Binary choice at route level (static OR dynamic)
+- **New model:** Granular caching at component level
+
+**Result:** You **cannot** return 404 for Product 7 with Cache Components. It will always be accessible (cached on-demand).
+
+If you NEED to restrict access to specific params:
+```tsx
+// Manual check in the page component
+async function ProductPage({ params }) {
+    const { productId } = await params;
+
+    const allowedIds = ['1', '2', '3', '4', '5', '6'];
+    if (!allowedIds.includes(productId)) {
+        notFound();  // Manual 404
+    }
+
+    // ... rest of logic
+}
+```
+
+### Recommended Setup
+
+```typescript
+// 1. Enable Cache Components in next.config.ts
+const nextConfig = {
+    cacheComponents: true,  // Enables PPR + "use cache"
+};
+
+// 2. Dynamic route with generateStaticParams
+// app/products/[productId]/page.tsx
+
+// Pre-warm cache for products 1-6 at build time
+export async function generateStaticParams() {
+    console.log('Pre-warming cache at build time...');
+    const productIds = ['1', '2', '3', '4', '5', '6'];
+    return productIds.map(id => ({ productId: id }));
+}
+
+// Cached data fetching function
+async function getProduct(id: string) {
+    "use cache";  // Enable caching
+    console.log(`🔥 getProduct() called for ID: ${id}`);
+
+    await new Promise(resolve => setTimeout(resolve, 5000));  // Simulate DB call
+
+    const products = [
+        { id: '1', name: 'Product 1' },
+        { id: '2', name: 'Product 2' },
+        // ... up to 7
+    ];
+
+    console.log(`✅ getProduct() completed for ID: ${id}`);
+    return products.find(p => p.id === id);
+}
+
+// Page component (no Suspense needed because "use cache" declared intent)
+export default async function ProductPage({ params }: { params: Promise<{ productId: string }> }) {
+    const { productId } = await params;
+    const product = await getProduct(productId);
+
+    if (!product) {
+        notFound();
+    }
+
+    return (
+        <div>
+            <h1>{product.name}</h1>
+            <p>Product ID: {productId}</p>
+        </div>
+    );
+}
+```
+
+### Key Learnings
+
+**✅ What Works:**
+
+- **"use cache" enables runtime caching** - Not build-time static generation
+- **generateStaticParams pre-warms cache at build time** - Products 1-6 cached during build
+- **Parallel execution speeds up builds** - Not sequential (6 × 5s), but batched
+- **Background pre-warming may happen** - Product 7 might be cached when server starts
+- **Console logs help debug** - Add logs to see when functions actually run
+- **No Suspense needed with "use cache"** - The directive declares your caching intent
+- **PPR is the new default** - `◐` symbol is expected with Cache Components
+- **Cache revalidation defaults to 15min** - Configurable with cache tags
+
+**⚠️ Common Gotchas:**
+
+- **❌ WRONG: "generateStaticParams creates static HTML"**
+  - Reality: With Cache Components, it **pre-warms the cache**, not generates HTML
+- **❌ WRONG: "I should see `○` (static) symbol with 'use cache'"**
+  - Reality: With Cache Components, you get `◐` (PPR) - this is the new "static"
+- **All old route segment configs blocked** - `dynamic`, `dynamicParams`, `revalidate` all error
+- **Can't use Suspense without "use cache"** - Get "blocking route" error
+- **Can't use "use cache" without Suspense in some cases** - Or remove Suspense entirely
+- **Build time != product count × delay** - Parallel execution makes it faster
+- **Product 7 might be instant on first visit** - Background pre-warming is unpredictable
+- **First visit after cache expires** - Users will experience delay again (default 15min)
+- **Cannot prevent access to non-listed params** - Use manual `notFound()` check instead
+
+**🎯 When to Use generateStaticParams:**
+
+| Scenario                                  | Use generateStaticParams? | Why                                                   |
+|-------------------------------------------|---------------------------|-------------------------------------------------------|
+| E-commerce: 1000 products, 50 popular     | ✅ Yes (for top 50)        | Pre-warm cache for popular items at build time        |
+| Blog: 500 posts, all equally important    | ✅ Yes (all 500)           | Pre-warm all posts, users get instant load            |
+| User profiles: Millions of users          | ❌ No                      | Cache on-demand, can't pre-warm millions at build     |
+| Dynamic content from external API         | ❌ No                      | Data changes frequently, cache at runtime instead     |
+| Admin dashboard with real-time data       | ❌ No                      | Data must be fresh, don't cache at build              |
+
+**📊 Build vs Runtime Behavior:**
+
+| Product | In generateStaticParams? | Build Time                     | First Runtime Visit       | Second Runtime Visit |
+|---------|--------------------------|--------------------------------|---------------------------|----------------------|
+| 1-6     | ✅ Yes                    | Cache populated (5s per batch) | Instant (cache hit)       | Instant (cache hit)  |
+| 7       | ❌ No                     | Nothing                        | 5s delay OR instant (pre-warming) | Instant (cache hit)  |
+
+**💡 Mental Model:**
+
+Think of `generateStaticParams` as a **"priority list"** for caching:
+
+```
+generateStaticParams = [1, 2, 3, 4, 5, 6]
+
+Build time:
+  Next.js: "These IDs are important, let me warm their cache NOW"
+  → Runs getProduct(1-6) → Stores results in cache
+
+Runtime (Product 1 visit):
+  → Cache lookup: Found! → Return instantly
+
+Runtime (Product 7 visit):
+  → Cache lookup: Not found → Run getProduct(7) → Store in cache → Return
+```
+
+Without `generateStaticParams`:
+```
+Build time:
+  Next.js: "No priority list, I'll cache on-demand"
+  → Nothing happens
+
+Runtime (first visit to any product):
+  → All products have 5s delay (cache miss)
+```
+
+**🎓 Common Confusion Points:**
+
+1. **"Why isn't my page fully static with generateStaticParams?"**
+   - Because you have `cacheComponents: true` enabled
+   - This shifts the model from "static HTML" to "cached data"
+   - The `◐` (PPR) symbol is expected and correct
+
+2. **"How do I force fully static generation like Next.js 15?"**
+   - Disable `cacheComponents` in `next.config.ts`
+   - Use `export const dynamic = 'force-static'` in page
+   - This goes back to the old model (not recommended by Next.js team)
+
+3. **"Why does my build take less time than expected?"**
+   - Parallel execution! Next.js uses multiple workers
+   - Check logs for timestamps - items start almost simultaneously
+
+4. **"Why is Product 7 instant on first visit?"**
+   - Background pre-warming (undocumented behavior)
+   - Race condition between your visit and server warmup
+   - Not guaranteed - may still have 5s delay
+
+5. **"Can I block access to Product 7 with dynamicParams?"**
+   - No, `dynamicParams` doesn't work with Cache Components
+   - Use manual check: `if (!allowedIds.includes(id)) notFound()`
+
+6. **"What's the difference between 'use cache' and cache()?"**
+   - `"use cache"`: Next.js 16 directive for caching function output
+   - `cache()`: React function for request-level deduplication
+   - Use `"use cache"` as primary caching mechanism with Cache Components
+
+7. **"When should I use Suspense with 'use cache'?"**
+   - **With Suspense:** Want streaming UI with loading states (progressive rendering)
+   - **Without Suspense:** Want to wait for all data before showing page (simpler)
+   - Both work! It's about UX preference, not correctness
+
+### Demo: `http://localhost:3000/static-params-demo`
+
+**Test it yourself:**
+
+1. **Build and observe logs:**
+   ```bash
+   npm run build
+   # Watch for:
+   # - "Running generateStaticParams..." log
+   # - "🔥 getProduct() called for ID: 1-6" logs
+   # - Total build time (~10s, not 30s)
+   # - Symbol: ◐ (PPR, not ○ static)
+   ```
+
+2. **Test Products 1-6 (in generateStaticParams):**
+   ```bash
+   npm start
+   # Visit: http://localhost:3000/static-params-demo/products/1
+   # Expected: Instant load (0 delay)
+   # Cache hit from build time!
+   ```
+
+3. **Test Product 7 (NOT in generateStaticParams):**
+   ```bash
+   # Visit: http://localhost:3000/static-params-demo/products/7
+   # Expected: Either instant (pre-warmed) OR 5s delay (cache miss)
+   # If delayed, refresh → instant (cache hit)
+   ```
+
+4. **Check server logs:**
+   ```bash
+   # In the terminal where npm start is running:
+   # - See "🔥 getProduct() called for ID: 7" if cache miss
+   # - Or nothing if cache hit (pre-warmed)
+   ```
+
+### Next.js Team Recommendation
+
+**The Next.js team actively encourages the Cache Components (PPR) approach:**
+
+1. **Cache Components is the default** in Next.js 16
+2. **Old route segment configs intentionally blocked** (`dynamic`, `dynamicParams`)
+3. **Vercel's blog posts emphasize** "instant navigation" through PPR + caching
+4. **Philosophy shift:** From binary (static OR dynamic) to granular (component-level caching)
+
+**However:** You can still opt-out by not enabling `cacheComponents: true`, but this is considered the "legacy" approach.
+
+[Official Docs - generateStaticParams](https://nextjs.org/docs/app/api-reference/functions/generate-static-params) | [Cache Components](https://nextjs.org/docs/app/getting-started/cache-components) | [use cache](https://nextjs.org/docs/app/api-reference/directives/use-cache)
 
 </details>
 

@@ -34,6 +34,9 @@ const routes = {
     testRedirect: '/redirect-rewrite-demo/test-redirect',
     testRewrite: '/redirect-rewrite-demo/test-rewrite',
 
+    staticParamsDemo: '/static-params-demo',
+    staticParamsProductDetailsDemo: (productId: string) => `/static-params-demo/products/${productId}`,
+
     funda: '/funda',
     fundaPeople: '/funda/people',
     fundaCompanies: '/funda/companies',

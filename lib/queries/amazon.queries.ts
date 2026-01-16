@@ -42,4 +42,37 @@ const getProduct = cache(async (collection: string, productId: string): Promise<
     return JSON.parse(JSON.stringify(document)) as Product;
 });
 
-export {getProducts, getProduct};
+const getProductsForStaticParams = cache(async (collection: string): Promise<Product[]> => {
+    await connectDB();
+
+    const client: MongoClient = getClient();
+    const db: Db = client.db(DATABASE);
+    const dbCollection = db.collection(collection);
+
+    const documents = await dbCollection.find({}).toArray();
+
+    return JSON.parse(JSON.stringify(documents)) as Product[];
+});
+
+const getProductForStaticParams = cache(async (collection: string, productId: string): Promise<Product> => {
+    await connectDB();
+
+    const client: MongoClient = getClient();
+    const db: Db = client.db(DATABASE);
+    const dbCollection = db.collection(collection);
+
+    if (!ObjectId.isValid(productId)) {
+        // We can't throw a not-found() here, so we'll return null and let the page handle it.
+        return null as any;
+    }
+
+    const document = await dbCollection.findOne({_id: new ObjectId(productId)});
+
+    if (!document) {
+        return null as any;
+    }
+
+    return JSON.parse(JSON.stringify(document)) as Product;
+});
+
+export {getProducts, getProduct, getProductsForStaticParams, getProductForStaticParams};
