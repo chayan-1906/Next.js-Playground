@@ -1,9 +1,11 @@
-import {Suspense} from "react";
 import {notFound} from "next/navigation";
 
 // This is a mock data fetching function.
 async function getProduct(id: string) {
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    "use cache";
+    console.log(`🔥 getProduct() called for ID: ${id} at ${new Date().toISOString()}`);
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    console.log(`✅ getProduct() completed for ID: ${id} at ${new Date().toISOString()}`);
     const products = [
         {id: '1', name: 'Smartphone X'},
         {id: '2', name: 'Laptop Pro'},
@@ -11,7 +13,7 @@ async function getProduct(id: string) {
         {id: '4', name: 'Smartwatch 2'},
         {id: '5', name: '4K Monitor'},
         {id: '6', name: 'Mechanical Keyboard'},
-        {id: '100', name: 'Gaming Mouse'},
+        {id: '7', name: 'Gaming Mouse'},
     ];
     return products.find(p => p.id === id);
 }
@@ -32,13 +34,14 @@ export async function generateStaticParams() {
  * The main page component. It sets up the Suspense boundary.
  * The 'params' object here is a Promise in this Next.js version.
  */
-function ProductPage({params}: { params: Promise<{ productId: string }> }) {
+
+/*async function ProductPage({params}: { params: Promise<{ productId: string }> }) {
     return (
         <Suspense fallback={<div className={'container mx-auto p-8'}>Loading product...</div>}>
             <ProductPageContent params={params}/>
         </Suspense>
     );
-}
+}*/
 
 /**
  * An async component to handle the actual data fetching and rendering.
@@ -55,7 +58,7 @@ async function ProductPageContent({params}: { params: Promise<{ productId: strin
     return (
         <main className={'container mx-auto px-4 py-10 bg-white min-h-screen'}>
             <div className={'p-8 border rounded-lg shadow-lg bg-white'}>
-                <h1 className={'text-5xl font-extrabold mb-3 text-black'}>{product.name}</h1>
+                <h1 className={'text-5xl font-extrabold mb-3 text-gray-900'}>{product.name}</h1>
                 <p className={'text-xl text-gray-500 mb-6'}>Product ID: {product.id}</p>
 
                 <div className={'mt-8 p-6 border-t border-gray-200'}>
@@ -78,4 +81,4 @@ async function ProductPageContent({params}: { params: Promise<{ productId: strin
     );
 }
 
-export default ProductPage;
+export default ProductPageContent;

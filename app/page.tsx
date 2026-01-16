@@ -51,10 +51,6 @@ function Home() {
                     <button className={'w-full px-4 py-3 rounded-xl bg-pink-600 hover:bg-pink-800 transition text-white font-medium cursor-pointer'}>Redirect-Rewrite Demo</button>
                 </Link>
 
-                <Link href={routes.redirectRewriteDemo} className={'block'}>
-                    <button className={'w-full px-4 py-3 rounded-xl bg-pink-600 hover:bg-pink-800 transition text-white font-medium cursor-pointer'}>Redirect-Rewrite Demo</button>
-                </Link>
-
                 <Link href={routes.staticParamsDemo} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-orange-600 hover:bg-orange-800 transition text-white font-medium cursor-pointer'}>Static Params Demo</button>
                 </Link>
