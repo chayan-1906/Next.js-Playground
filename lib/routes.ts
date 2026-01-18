@@ -37,6 +37,13 @@ const routes = {
     staticParamsDemo: '/static-params-demo',
     staticParamsProductDetailsDemo: (productId: string) => `/static-params-demo/products/${productId}`,
 
+    catchOptionalAllDemo: '/catch-optional-all-demo',
+    catchAllDemo1Segment: '/catch-optional-all-demo/catch-all/firstSegment',
+    catchAllDemo2Segments: '/catch-optional-all-demo/catch-all/firstSegment/secondSegment',
+    optionalCatchAllDemo: '/catch-optional-all-demo/optional-catch-all',
+    optionalCatchAllDemo1Segment: '/catch-optional-all-demo/optional-catch-all/firstSegment',
+    optionalCatchAllDemo2Segments: '/catch-optional-all-demo/optional-catch-all/firstSegment/secondSegment',
+
     funda: '/funda',
     fundaPeople: '/funda/people',
     fundaCompanies: '/funda/companies',
