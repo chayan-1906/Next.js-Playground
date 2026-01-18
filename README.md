@@ -2554,3 +2554,199 @@ Runtime (first visit to any product):
 </details>
 
 ---
+
+<details>
+<summary><strong>28. Catch-all and Optional Catch-all Routes</strong> - Dynamic route segments for flexible URL patterns ([...slug] vs [[...slug]])</summary>
+
+### Core Concepts
+
+| Pattern       | Route Example                | Matches                                                      | Use Case                                     |
+|---------------|------------------------------|--------------------------------------------------------------|----------------------------------------------|
+| `[...slug]`   | `/docs/[...slug]/page.tsx`   | `/docs/intro`, `/docs/api/auth`, `/docs/a/b/c` (1+ segments) | Documentation, categories with required path |
+| `[[...slug]]` | `/docs/[[...slug]]/page.tsx` | `/docs`, `/docs/intro`, `/docs/a/b/c` (0+ segments)          | Documentation with homepage, file browsers   |
+| `[id]`        | `/products/[id]/page.tsx`    | `/products/123` (exactly 1 segment)                          | Single resource by ID                        |
+
+### Params Structure
+
+**This is critical to understand:**
+
+```typescript
+// URL: /catch-all/apple/banana/cherry
+params = {
+  slug: ['apple', 'banana', 'cherry']  // ✅ Object with array property
+}
+// NOT: ['apple', 'banana', 'cherry']  // ❌ Not a plain array!
+
+// URL: /optional-catch-all
+params = {
+  slug: undefined  // ✅ Property doesn't exist
+}
+// NOT: { slug: [] }  // ❌ NOT an empty array!
+```
+
+**Key insights:**
+- Property name (`slug`) matches the folder name `[...slug]`
+- With segments: `slug` is a non-empty array like `['a', 'b']`
+- Without segments (optional only): `slug` is `undefined` (not `[]`)
+- Trailing slashes are automatically removed by Next.js
+
+### Common Confusion #1: Empty Array vs Undefined
+
+**Initial expectation:**
+> "I thought `/optional-catch-all` would give `slug = []` because the array gets initialized before filling."
+
+**Reality:**
+```typescript
+// Optional catch-all with NO segments
+slug = undefined  // ✅ Actual behavior
+
+// Why not []?
+// Because the property doesn't exist at all when there are no segments
+// This is MORE explicit: undefined = "not provided" vs [] = "provided but empty"
+```
+
+**Practical benefit:**
+```typescript
+// Clean check
+if (slug) {
+  // Handle segments
+} else {
+  // Handle no segments
+}
+
+// vs having to check both existence AND length
+if (slug && slug.length > 0) {  // Unnecessary!
+  // Handle segments
+}
+```
+
+### Common Confusion #2: Can slug Ever Be []?
+
+**Test with trailing slashes:**
+```
+/optional-catch-all/  → Redirects to → /optional-catch-all → slug = undefined
+/catch-all/           → Redirects to → /catch-all         → 404
+```
+
+**Answer:** No! Next.js removes trailing slashes automatically.
+
+`slug` can ONLY be:
+- `undefined` (no segments)
+- Non-empty array like `['a']` or `['a', 'b', 'c']`
+
+**Never:** `[]` (empty array)
+
+### URL Examples & Results
+
+| URL                         | `[...slug]`                     | `[[...slug]]`                   |
+|-----------------------------|---------------------------------|---------------------------------|
+| `/demo`                     | 404                             | `undefined`                     |
+| `/demo/apple`               | `['apple']`                     | `['apple']`                     |
+| `/demo/apple/banana`        | `['apple', 'banana']`           | `['apple', 'banana']`           |
+| `/demo/apple/banana/cherry` | `['apple', 'banana', 'cherry']` | `['apple', 'banana', 'cherry']` |
+
+### When to Use Each Pattern
+
+#### Use `[...slug]` (Catch-all) When:
+- Base route should 404 or be handled separately
+- You have a dedicated landing page at a different route
+- Example: Product categories where `/products` is a custom page
+
+```
+products/
+  page.tsx              ← Custom landing page with featured products
+  [...categories]/
+    page.tsx            ← All category pages use same template
+```
+
+#### Use `[[...slug]]` (Optional Catch-all) When:
+- Base route should be handled by the same component
+- All depth levels share the same rendering logic
+- Example: Documentation, file browsers, breadcrumb navigation
+
+```
+docs/
+  [[...slug]]/
+    page.tsx            ← Handles /docs, /docs/intro, /docs/api/auth, etc.
+```
+
+### Decision Framework
+
+Ask yourself: **"Does each page need custom React code, or do all pages share the same template?"**
+
+| Scenario              | Custom React Code?   | Data Source     | Pattern                   |
+|-----------------------|----------------------|-----------------|---------------------------|
+| Blog with 1000 posts  | ❌ Same template      | Database/CMS    | `[slug]`                  |
+| Documentation site    | ❌ Same template      | Markdown files  | `[[...slug]]`             |
+| Product categories    | ❌ Same template      | Database        | `[...categories]`         |
+| File browser          | ❌ Same template      | File system/API | `[[...path]]`             |
+| Student profile pages | ✅ Custom logic       | Database        | `/students/[id]/page.tsx` |
+| Event details         | ✅ Custom forms       | Database        | `/events/[id]/page.tsx`   |
+| Admin dashboard       | ✅ Different sections | N/A             | Explicit routes           |
+
+**Rule of thumb:**
+- **Content-driven** (CMS, markdown, DB with shared template) → Catch-all
+- **Logic-driven** (custom components per page) → Explicit routes
+
+### Practical Example: Documentation Site
+
+```tsx
+// docs/[[...slug]]/page.tsx
+export default async function DocsPage({ params }: { params: Promise<{ slug?: string[] }> }) {
+  const { slug } = await params;
+
+  // Convert slug to file path
+  const filePath = slug ? `content/${slug.join('/')}.md` : 'content/index.md';
+
+  // Read markdown
+  const content = await fs.readFile(filePath, 'utf-8');
+
+  // Render using shared template
+  return <MarkdownRenderer content={content} />;
+}
+```
+
+**With one file, you handle:**
+- `/docs` → reads `content/index.md`
+- `/docs/getting-started` → reads `content/getting-started.md`
+- `/docs/api/authentication` → reads `content/api/authentication.md`
+
+**Benefits:**
+- Technical writers can add new docs without touching code
+- All docs share consistent styling/layout
+- No code deployment needed for content updates
+
+### Key Learnings
+
+**✅ What You Need to Know:**
+
+1. **Params structure:** `{ slug: string[] | undefined }`, NOT a plain array
+2. **undefined vs []:** With no segments, `slug` is `undefined`, never `[]`
+3. **Simplified checking:** Use `if (slug)` instead of `if (slug && slug.length > 0)`
+4. **Decision rule:** Choose catch-all when content comes from external sources with shared templates
+5. **Most apps don't need it:** Regular `[id]` routes are more common for custom page logic
+
+**⚠️ Common Gotchas:**
+
+- Expecting `[]` instead of `undefined` for zero segments
+- Using catch-all when explicit routes would be clearer
+- Forgetting that `slug` is a property of `params`, not `params` itself
+- Over-engineering with catch-all when simple dynamic routes suffice
+
+### Demo: `http://localhost:3000/catch-optional-all-demo`
+
+Structure:
+```
+catch-optional-all-demo/
+  page.tsx                              ← Hub page with links
+  catch-all/
+    [...slug]/page.tsx                  ← Requires 1+ segments
+  optional-catch-all/
+    [[...slug]]/page.tsx                ← Allows 0+ segments
+```
+
+[Official Docs](https://nextjs.org/docs/app/api-reference/file-conventions/dynamic-routes#catch-all-segments)
+
+</details>
+
+---
