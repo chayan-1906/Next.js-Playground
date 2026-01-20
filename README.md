@@ -1556,6 +1556,149 @@ You now understand:
 ---
 
 <details>
+<summary><strong>11. router.refresh() vs revalidatePath()</strong> - Client-side refresh vs server-side cache invalidation</summary>
+
+### Core Concepts
+
+| Method                  | Side          | Purpose                                    | Cache Behavior                  |
+|-------------------------|---------------|--------------------------------------------|---------------------------------|
+| `router.refresh()`      | Client        | Re-render current route, refetch data      | **Respects cache** (no purge)   |
+| `revalidatePath(path)`  | Server        | Invalidate cache, force regeneration       | **Purges cache** (full refresh) |
+
+### Key Difference
+
+**`router.refresh()`:**
+- Re-renders the page and refetches Server Component data
+- **Keeps cached data cached** - only uncached data refreshes
+- Useful for showing fresh dynamic data without busting static caches
+
+**`revalidatePath()`:**
+- Invalidates the cache and forces fresh regeneration
+- **Everything refreshes** - both cached and uncached data
+- Necessary after mutations (e.g., editing a blog post)
+
+### Implementation Pattern
+
+```typescript
+// lib/queries/time.queries.ts
+"use server";
+import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
+
+// Cached function - timestamp persists across requests
+const getCachedTime = async () => {
+    "use cache";
+    return new Date();
+}
+
+// Uncached function - fresh on every render
+const getUncachedTime = async () => {
+    await headers(); // Opt into dynamic rendering
+    return new Date();
+}
+
+// Server Action for cache invalidation
+const revalidateTime = async () => {
+    revalidatePath('/refresh-demo');
+}
+```
+
+```tsx
+// app/refresh-demo/page.tsx (Server Component)
+import { getCachedTime, getUncachedTime } from "@/lib/queries/time.queries";
+import { ClientRefreshButton } from "./ClientRefreshButton";
+
+export default async function Page() {
+    const cachedTime = await getCachedTime();    // Cached
+    const uncachedTime = await getUncachedTime(); // Fresh
+
+    return (
+        <div>
+            <p>Cached: {cachedTime.toISOString()}</p>
+            <p>Uncached: {uncachedTime.toISOString()}</p>
+            <ClientRefreshButton />
+        </div>
+    );
+}
+```
+
+```tsx
+// app/refresh-demo/ClientRefreshButton.tsx (Client Component)
+"use client";
+import { useRouter } from "next/navigation";
+import { revalidateTime } from "@/lib/queries/time.queries";
+
+export function ClientRefreshButton() {
+    const router = useRouter();
+
+    return (
+        <div>
+            <button onClick={() => router.refresh()}>
+                Client Refresh (uncached only)
+            </button>
+            <button onClick={revalidateTime}>
+                Server Refresh (all data)
+            </button>
+        </div>
+    );
+}
+```
+
+### When to Use Each
+
+| Use Case                                      | Method               |
+|-----------------------------------------------|----------------------|
+| Refresh notifications without busting cache   | `router.refresh()`   |
+| Show fresh dynamic data, keep static cached   | `router.refresh()`   |
+| After editing content (need to see changes)   | `revalidatePath()`   |
+| After mutations (create/update/delete)        | `revalidatePath()`   |
+| Invalidate stale cached data                  | `revalidatePath()`   |
+
+### Key Learnings
+
+**✅ What You Need to Know:**
+
+1. **Cache behavior is the key difference:**
+   - `router.refresh()` = respects cache (cheaper, faster)
+   - `revalidatePath()` = invalidates cache (necessary after mutations)
+
+2. **Server Actions can be called from Client Components:**
+   - Just import and use in `onClick` handlers
+   - Pattern: Client button → Server Action → `revalidatePath()`
+
+3. **Making data uncached:**
+   - Use `await headers()` to opt into dynamic rendering
+   - This forces Next.js to compute fresh values on every render
+   - Avoids "Route used Date() without opting into dynamic rendering" warning
+
+4. **onClick only works in Client Components:**
+   - Can't use event handlers in Server Components
+   - Server Components are for rendering, not interactivity
+
+**⚠️ Common Gotchas:**
+
+- Thinking `router.refresh()` clears all caches (it doesn't!)
+- Using `revalidatePath()` when `router.refresh()` would suffice (wastes resources)
+- Trying to use `onClick` in Server Components (won't work)
+- Forgetting to use `await headers()` with dynamic data like `new Date()`
+- Confusing request-level cache (`cache()`) with persistent cache (`"use cache"`)
+
+**🎯 Real-World Examples:**
+
+- **Dashboard:** Use `router.refresh()` to update notifications without invalidating user profile cache
+- **Blog editor:** Use `revalidatePath()` after saving edits to see updated content
+- **E-commerce:** Use `revalidatePath()` after adding to cart to reflect inventory changes
+
+### Demo: `http://localhost:3000/refresh-demo`
+
+[Official Docs - router.refresh()](https://nextjs.org/docs/app/api-reference/functions/use-router#userouter)
+[Official Docs - revalidatePath()](https://nextjs.org/docs/app/api-reference/functions/revalidatePath)
+
+</details>
+
+---
+
+<details>
 <summary><strong>12. nextUrl (URL vs nextUrl)</strong> - Why nextUrl is better for middleware/proxy</summary>
 
 ### Core Concepts

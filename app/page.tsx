@@ -39,6 +39,10 @@ function Home() {
                     <button className={'w-full px-4 py-3 rounded-xl bg-lime-600 hover:bg-lime-800 transition text-white font-medium cursor-pointer'}>Intercepting & Parallel Routes Demo</button>
                 </Link>
 
+                <Link href={routes.refreshDemo} className={'block'}>
+                    <button className={'w-full px-4 py-3 rounded-xl bg-rose-600 hover:bg-rose-800 transition text-white font-medium cursor-pointer'}>Refresh Demo</button>
+                </Link>
+
                 <Link href={routes.proxyDemo} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-gray-600 hover:bg-gray-800 transition text-white font-medium cursor-pointer'}>Proxy Demo</button>
                 </Link>
