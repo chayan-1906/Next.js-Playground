@@ -24,6 +24,8 @@ const routes = {
     productsDemo: `/intercepting-parallel-demo/products-demo`,
     productDemo: (productId: string) => `/intercepting-parallel-demo/products-demo/products/${productId}`,
 
+    refreshDemo: '/refresh-demo',
+
     proxyDemo: '/proxy-demo',
 
     redirectDemo: '/redirect-demo',
