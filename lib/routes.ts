@@ -11,6 +11,8 @@ const routes = {
 
     errorDemo: '/error-demo',
 
+    memoizationDemo: '/memoization-demo',
+
     interceptingParallelDemo: '/intercepting-parallel-demo',
     interceptingDemo: '/intercepting-parallel-demo/intercepting',
     photoDetailsDemo: (id: string) => `/intercepting-parallel-demo/intercepting/photos/${id}`,
