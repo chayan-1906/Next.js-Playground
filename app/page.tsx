@@ -18,11 +18,9 @@ function Home() {
                 <Link href={routes.clientActionStateDemo} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-amber-600 hover:bg-amber-800 transition text-white font-medium cursor-pointer'}>Client Action State Demo</button>
                 </Link>
-
                 <Link href={routes.serverActionStateDemo} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-amber-600 hover:bg-amber-800 transition text-white font-medium cursor-pointer'}>Server Action State Demo</button>
                 </Link>
-
                 <Link href={routes.serverClientHybridActionStateDemo} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-amber-600 hover:bg-amber-800 transition text-white font-medium cursor-pointer'}>Server Client Hybrid Action State Demo</button>
                 </Link>
@@ -33,6 +31,10 @@ function Home() {
 
                 <Link href={routes.errorDemo} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-red-600 hover:bg-red-800 transition text-white font-medium cursor-pointer'}>Error Demo</button>
+                </Link>
+
+                <Link href={routes.memoizationDemo} className={'block'}>
+                    <button className={'w-full px-4 py-3 rounded-xl bg-slate-600 hover:bg-slate-800 transition text-white font-medium cursor-pointer'}>Memoization Demo</button>
                 </Link>
 
                 <Link href={routes.interceptingParallelDemo} className={'block'}>

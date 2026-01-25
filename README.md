@@ -729,6 +729,158 @@ async function Page({ searchParams }) {
 ---
 
 <details>
+<summary><strong>7. Request Memoization</strong> - Automatic fetch deduplication within a single render pass</summary>
+
+### What is Request Memoization?
+
+**Automatic deduplication** of identical `fetch()` calls that happen during the same Server Component render pass. This is **NOT** the same as:
+- ❌ React's `memo()` (client-side component memoization)
+- ❌ Data caching with `cache()` or `"use cache"` (persists across requests)
+- ❌ Browser caching
+
+### How It Works
+
+| Feature              | Request Memoization                     | Data Cache (`cache()` / `"use cache"`)      |
+|----------------------|-----------------------------------------|---------------------------------------------|
+| **Scope**            | Single render pass                      | Across multiple requests                    |
+| **Duration**         | One page load                           | Persistent until revalidated                |
+| **Setup Required**   | None - automatic!                       | Explicit `cache()` wrapper or `"use cache"` |
+| **Where It Happens** | Server-side during render               | Server-side, persisted                      |
+| **Purpose**          | Dedupe identical fetches in same render | Cache responses across different renders    |
+
+### What Makes Requests "Identical"?
+
+For Next.js to memoize requests, they must be **100% identical**:
+
+✅ Same URL (including query params)
+✅ Same HTTP method (GET, POST, etc.)
+✅ Same headers
+✅ Same fetch options (`cache`, `next.revalidate`, etc.)
+
+**Even tiny differences break memoization:**
+
+```typescript
+// These will be memoized together (same URL)
+fetch('http://localhost:3000/api/timestamp')  // Component 1
+fetch('http://localhost:3000/api/timestamp')  // Component 2
+
+// This will make a SEPARATE request (different query param)
+fetch('http://localhost:3000/api/timestamp?id=123')  // Component 3
+```
+
+**Result:** 2 network requests (Components 1 & 2 share one, Component 3 gets its own)
+
+### Example Scenario
+
+```typescript
+// Three components in the same page
+async function DataFetcher1() {
+  console.log('Component 1 fetching...');  // ✅ Runs
+  const res = await fetch(`${BASE_URL}/api/timestamp`);
+  return <div>{res.timestamp}</div>;
+}
+
+async function DataFetcher2() {
+  console.log('Component 2 fetching...');  // ✅ Runs
+  const res = await fetch(`${BASE_URL}/api/timestamp`);  // ✅ Shares request with Component 1!
+  return <div>{res.timestamp}</div>;
+}
+
+async function DataFetcher3() {
+  console.log('Component 3 fetching...');  // ✅ Runs
+  const res = await fetch(`${BASE_URL}/api/timestamp`);  // ✅ Shares request with Components 1 & 2!
+  return <div>{res.timestamp}</div>;
+}
+```
+
+**Server logs:**
+```
+Component 1 fetching...
+Component 2 fetching...
+Component 3 fetching...
+🔥 API CALLED at 2026-01-25T12:16:06.376Z  ← Only ONCE!
+GET /api/timestamp 200 in 509ms
+```
+
+**All 3 components:**
+- ✅ Run their code (3 console.logs)
+- ✅ Call `fetch()` (3 fetch calls in code)
+- ✅ But only 1 actual network request is made
+- ✅ All receive the same response (same timestamp!)
+
+### Key Learnings
+
+**✅ What You Need to Know:**
+
+1. **Automatic & Server-Side:** No code changes needed - Next.js handles it automatically during Server Component rendering
+2. **Per-Render Scope:** Memoization only lasts for ONE page load/render. Refresh the page? Fresh requests.
+3. **Component Code Still Runs:** Each component executes its fetch call, but Next.js deduplicates at the network layer
+4. **URL Precision Matters:** Query params, headers, everything must match 100%
+5. **Independent from Data Cache:** Request memoization (single render) ≠ Data cache (across renders)
+
+**⚠️ Common Misconceptions (Things That Confused Me):**
+
+- **"Is this client-side because React's `memo()` is client-side?"**
+  → NO! This is **server-side** and happens during Server Component rendering. Different from React's `memo()`.
+
+- **"Do I need to wrap fetch with `cache()` or `memo()` for this to work?"**
+  → NO! It's **automatic** for all `fetch()` calls in Server Components. No wrapper needed.
+
+- **"Is this the same as caching API calls with `cache()` or `"use cache"`?"**
+  → NO! Those persist **across multiple page visits**. Request memoization only works **within one render**.
+
+- **"Will memoization work if I refresh the page?"**
+  → NO! It only works during a **single render pass**. Each refresh starts fresh. Use Data Cache for persistence.
+
+- **"Same URL means same domain, right?"**
+  → NO! It means **100% identical** - including query params. `?id=1` vs `?id=2` are different!
+
+### When Request Memoization Actually Matters
+
+**Useful in these scenarios:**
+
+✅ Multiple components need the same data (e.g., user profile shown in header + sidebar)
+✅ Shared data across nested components
+✅ Accidentally making duplicate requests (prevents wasted network calls)
+
+**Doesn't help with:**
+
+❌ Caching across page loads (use Data Cache instead)
+❌ Client Component fetching (request memoization is Server Components only)
+❌ Different URLs or fetch options
+
+### Comparison Table: Memoization vs Caching
+
+| Scenario                                     | Request Memoization | Data Cache                             |
+|----------------------------------------------|---------------------|----------------------------------------|
+| 3 components fetch same URL in one page load | ✅ 1 request         | ✅ 1 request (first visit)              |
+| User refreshes the page                      | ❌ New request       | ✅ Uses cached data                     |
+| Different query params (`?id=1` vs `?id=2`)  | ❌ Separate requests | ❌ Separate cache entries               |
+| Fetch from Client Component                  | ❌ Not available     | ❌ Not available (browser caching only) |
+
+### Demo: `http://localhost:3000/memoization-demo`
+
+**Structure:**
+```
+memoization-demo/
+  page.tsx              ← Main page
+  DataFetcher1.tsx      ← Fetches /api/timestamp
+  DataFetcher2.tsx      ← Fetches /api/timestamp (memoized with #1)
+  DataFetcher3.tsx      ← Fetches /api/timestamp?id=123 (separate request)
+```
+
+**What to observe:**
+1. Check server logs for `🔥 API CALLED` - should see 2 calls (Components 1+2 share one, Component 3 separate)
+2. All components log "Component X fetching..." but fewer network requests
+3. Components 1 & 2 show identical timestamps; Component 3 shows a slightly different one
+
+[Official Docs](https://nextjs.org/docs/app/building-your-application/caching#request-memoization)
+
+</details>
+
+---
+
+<details>
 <summary><strong>8. Intercepting Routes</strong> - Show modals on navigation, full pages on direct visits/refresh</summary>
 
 ### Core Concepts
