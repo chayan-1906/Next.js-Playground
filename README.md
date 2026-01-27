@@ -2073,6 +2073,317 @@ The `request.url` provides the origin (protocol + host + port). Without it, you'
 ---
 
 <details>
+<summary><strong>18. Next.js MCP Server (next-devtools-mcp)</strong> - AI-powered runtime diagnostics and documentation access for Next.js 16+</summary>
+
+### Why MCP Matters
+
+**The Problem: Outdated AI Training Data**
+
+AI assistants (Claude, ChatGPT, etc.) are trained on data from months/years ago. This causes critical issues:
+
+- **Middleware → Proxy rename**: Next.js 16 renamed Middleware to Proxy. Without MCP, AI will tell you to create `middleware.ts` (WRONG!) instead of `proxy.ts` (CORRECT!)
+- **New features missing**: Cache Components, `updateTag`, new async APIs in Next.js 16 aren't in older training data
+- **Deprecated patterns**: AI might suggest outdated approaches like `unstable_cache` instead of `"use cache"`
+
+**The Solution: Model Context Protocol (MCP)**
+
+MCP lets AI assistants:
+1. **Query official Next.js docs in real-time** (always up-to-date)
+2. **Inspect your running Next.js app** (live errors, routes, logs)
+3. **Forget outdated training data** and rely on current documentation
+
+### Core Concepts
+
+| Tool Category     | Requires Dev Server? | Purpose                                       | Example Tools                                                                 |
+|-------------------|----------------------|-----------------------------------------------|-------------------------------------------------------------------------------|
+| **Runtime Tools** | ✅ YES (port 3000)    | Inspect live running app state                | `get_errors`, `get_routes`, `get_logs`, `get_page_metadata`                   |
+| **Static Tools**  | ❌ NO                 | Read docs, automate upgrades, browser testing | `nextjs_docs`, `upgrade_nextjs_16`, `enable_cache_components`, `browser_eval` |
+
+### Available MCP Tools
+
+#### 1. **`init`** - Start Here Every Session
+- Resets AI's knowledge baseline
+- Forces AI to query docs instead of using training data
+- **Always call this first!**
+
+```typescript
+// What it does internally:
+"Forget everything you think you know about Next.js.
+Use nextjs_docs for ALL Next.js questions. No exceptions."
+```
+
+#### 2. **`nextjs_docs`** - Official Documentation Access
+- Search or fetch Next.js documentation
+- Always up-to-date with your installed version
+
+```typescript
+// Workflow:
+// Step 1: Read the index to find doc paths
+nextjs_docs({ action: "search", query: "middleware" })
+
+// Step 2: Fetch specific documentation
+nextjs_docs({ path: "/docs/app/getting-started/proxy" })
+```
+
+**Use when:** Learning how something works, checking API syntax, asking "how do I..." questions
+
+#### 3. **`nextjs_index`** - Discover Running Servers
+- Auto-discovers Next.js dev servers on your machine
+- Lists available runtime diagnostic tools
+- **Requires Next.js 16+** with dev server running
+
+```bash
+# Start your dev server first:
+npm run dev
+```
+
+**Returns:**
+```json
+{
+  "servers": [{
+    "port": 3000,
+    "url": "http://localhost:3000",
+    "tools": ["get_errors", "get_routes", "get_logs", ...]
+  }]
+}
+```
+
+#### 4. **`nextjs_call`** - Execute Runtime Diagnostics
+- Calls specific MCP tools on running Next.js server
+- Get real-time errors, routes, metadata
+
+```typescript
+// Example: Get all errors from dev server
+nextjs_call({ port: 3000, toolName: "get_errors" })
+
+// Example: List all routes in your app
+nextjs_call({ port: 3000, toolName: "get_routes" })
+
+// Example: Get project metadata
+nextjs_call({ port: 3000, toolName: "get_project_metadata" })
+```
+
+**Available Runtime Tools:**
+| Tool | What It Returns |
+|------|-----------------|
+| `get_errors` | Build errors, runtime errors, TypeScript errors from browser sessions |
+| `get_routes` | All App Router routes (shows `[dynamic]` segments) |
+| `get_logs` | Path to dev server log file |
+| `get_page_metadata` | What's contributing to current page render |
+| `get_project_metadata` | Project path, dev server URL |
+| `get_server_action_by_id` | Location of Server Action by ID |
+
+**Use when:** Debugging, inspecting your app, asking "what's wrong?" or "what routes exist?"
+
+#### 5. **`browser_eval`** - Browser Automation (Playwright)
+- Launch browser and test your Next.js app
+- Capture console errors, take screenshots
+- **Critical for Next.js upgrades:** Detects runtime errors curl/HTTP can't catch
+
+```typescript
+// Example: Start browser and navigate
+browser_eval({ action: "start", browser: "chrome", headless: false })
+browser_eval({ action: "navigate", url: "http://localhost:3000" })
+browser_eval({ action: "console_messages" }) // Get browser console errors
+```
+
+#### 6. **`upgrade_nextjs_16`** - Automated Upgrade Guide
+- Runs official codemods automatically
+- Handles breaking changes (async APIs, config migrations)
+- Requires clean git state
+
+#### 7. **`enable_cache_components`** - Cache Components Migration
+- Complete setup for Cache Components mode
+- Error detection and automated fixing
+
+### Setup Instructions
+
+**1. Install the MCP server:**
+
+```bash
+# Option A: Add to Claude Code CLI
+claude mcp add next-devtools npx next-devtools-mcp@latest
+
+# Option B: Manual config (project-level .mcp.json)
+{
+  "mcpServers": {
+    "next-devtools": {
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"]
+    }
+  }
+}
+```
+
+**2. Verify in Claude Code:**
+
+```bash
+# Check MCP servers list
+/mcp
+
+# You should see:
+# next-devtools - ✅ connected
+```
+
+**3. Start your Next.js dev server:**
+
+```bash
+npm run dev
+```
+
+**4. Test it:**
+
+```typescript
+// In Claude Code, try these commands:
+"Call init to set up MCP context"
+"What errors are in my Next.js app?" // Uses get_errors
+"Show me all routes in my app" // Uses get_routes
+"How does cacheTag work?" // Uses nextjs_docs
+```
+
+### Key Learnings
+
+**✅ Critical Concepts:**
+
+1. **Runtime = Dev Server Required**
+    - `nextjs_index`, `nextjs_call` with `get_*` tools need dev server running
+    - They connect to `http://localhost:3000/_next/mcp` (auto-exposed in Next.js 16+)
+    - Like hooking diagnostic equipment to a running car engine - can't check engine temperature if car is off!
+
+2. **Static = Works Offline**
+    - `nextjs_docs` just reads documentation files
+    - `upgrade_nextjs_16` modifies code files on disk
+    - No server needed
+
+3. **Always Start with `init`**
+    - Establishes documentation-first workflow
+    - Prevents AI from using outdated training data
+    - **Example:** Without `init`, AI might suggest `middleware.ts` instead of `proxy.ts`
+
+4. **MCP Solves the "Stale Training" Problem**
+    - Training data: "Use `unstable_cache` for caching"
+    - MCP docs: "Use `use cache` directive (stable in Next.js 16)"
+    - **AI with MCP gives you the current, correct answer**
+
+**⚠️ Common Gotchas:**
+
+1. **Forgetting to start dev server**
+   ```
+   Error: "No server info found"
+   Solution: Run `npm run dev` first, then try nextjs_index
+   ```
+
+2. **Expecting instant MCP availability**
+    - After installing MCP server, restart Claude Code or wait a moment
+    - Use `/mcp` command to verify connection status
+
+3. **Confusing MCP tools with bash commands**
+    - `nextjs_call` is an MCP tool, not a terminal command
+    - Don't run `nextjs_call` in your terminal - it's invoked by the AI assistant
+
+4. **Using wrong tool for the job**
+   ```
+   ❌ Wrong: "Use nextjs_docs to check current errors"
+   ✅ Right: "Use nextjs_call with get_errors to check current errors"
+
+   ❌ Wrong: "Use get_errors to learn how caching works"
+   ✅ Right: "Use nextjs_docs to learn how caching works"
+   ```
+
+**🎯 When to Use Each Tool:**
+
+| Your Question                       | Tool to Use                                   | Why                    |
+|-------------------------------------|-----------------------------------------------|------------------------|
+| "How does `cacheTag` work?"         | `nextjs_docs`                                 | Learning/API reference |
+| "What errors are in my app?"        | `nextjs_call` (`get_errors`)                  | Live diagnostics       |
+| "Show me my routes"                 | `nextjs_call` (`get_routes`)                  | Runtime inspection     |
+| "What's the syntax for `redirect`?" | `nextjs_docs`                                 | Documentation lookup   |
+| "Why is my page broken?"            | `nextjs_call` (`get_errors`) + `browser_eval` | Debugging              |
+| "How do I upgrade to Next.js 16?"   | `upgrade_nextjs_16`                           | Automation             |
+
+**📊 MCP vs Traditional AI:**
+
+| Without MCP                                | With MCP                                |
+|--------------------------------------------|-----------------------------------------|
+| ❌ AI: "Create `middleware.ts`" (outdated!) | ✅ AI: "Create `proxy.ts`" (correct!)    |
+| ❌ AI guesses about your app structure      | ✅ AI queries your running app           |
+| ❌ "I think you have 3 routes..."           | ✅ "You have 52 routes: /, /about, ..."  |
+| ❌ "Try adding console.logs to debug"       | ✅ "I see a TypeScript error at line 40" |
+| ❌ Training data from 2024                  | ✅ Documentation from 2025+              |
+
+### Common Confusion: "Why does runtime need the dev server?"
+
+**Your mental model:**
+> "Can't the MCP tool just read my files and figure out the routes/errors?"
+
+**Reality:**
+```typescript
+// Files on disk = STATIC CODE
+app/
+  page.tsx                    ← Code file
+  [id]/page.tsx              ← Code file
+
+// Running dev server = LIVE STATE
+http://localhost:3000         ← Actual page rendering
+http://localhost:3000/123     ← Dynamic route working
+Browser console: "Error!"     ← Runtime error happening NOW
+```
+
+**Analogy:**
+- **Static analysis** (reading files) = Looking at car blueprints
+- **Runtime inspection** (dev server) = Hooking up diagnostic equipment to a running engine
+
+**What runtime tools see:**
+- Actual TypeScript compiler errors (not just linting)
+- Browser console errors (React hydration errors, prop validation)
+- Which routes are registered by the framework
+- What's actually rendering in real browser sessions
+
+**Example:**
+
+```typescript
+// Your file: app/page.tsx
+<Link href={undefined} /> // ← Static tools won't catch this
+
+// But when you visit the page in browser:
+// Runtime error: "href expects string, got undefined"
+
+// MCP's get_errors catches this because it's watching
+// what happens when the page actually renders!
+```
+
+### Auto-Initialization (Optional)
+
+Add to `~/.claude/CLAUDE.md` (global) or `.claude/CLAUDE.md` (project):
+
+```markdown
+When starting Next.js work, automatically call the `init` tool from
+next-devtools-mcp first to establish proper context.
+```
+
+### Requirements
+
+- **Next.js 16+** for runtime tools (MCP support built-in)
+- **Node.js 20.19+** (latest maintenance LTS)
+- **Clean git state** for automated tools (codemods, migrations)
+
+### Telemetry & Privacy
+
+**Collected:** Tool usage, error events, session metadata (OS, Node version)
+**NOT collected:** Project code, file paths, API keys, credentials, tool arguments
+
+**Opt-out:**
+```bash
+export NEXT_TELEMETRY_DISABLED=1
+```
+
+[Official Docs - Next.js MCP Guide](https://nextjs.org/docs/app/guides/mcp) | [GitHub - next-devtools-mcp](https://github.com/vercel/next-devtools-mcp) | [npm Package](https://www.npmjs.com/package/next-devtools-mcp)
+
+</details>
+
+---
+
+<details>
 <summary><strong>21. Redirects (redirect, permanentRedirect, next.config.js)</strong> - HTTP redirects, status codes, and when to use each approach</summary>
 
 ### Core Concepts
@@ -2729,9 +3040,9 @@ export default async function ProductPage({ params }: { params: Promise<{ produc
 
 **📊 Build vs Runtime Behavior:**
 
-| Product | In generateStaticParams? | Build Time                     | First Runtime Visit       | Second Runtime Visit |
-|---------|--------------------------|--------------------------------|---------------------------|----------------------|
-| 1-6     | ✅ Yes                    | Cache populated (5s per batch) | Instant (cache hit)       | Instant (cache hit)  |
+| Product | In generateStaticParams? | Build Time                     | First Runtime Visit               | Second Runtime Visit |
+|---------|--------------------------|--------------------------------|-----------------------------------|----------------------|
+| 1-6     | ✅ Yes                    | Cache populated (5s per batch) | Instant (cache hit)               | Instant (cache hit)  |
 | 7       | ❌ No                     | Nothing                        | 5s delay OR instant (pre-warming) | Instant (cache hit)  |
 
 **💡 Mental Model:**
