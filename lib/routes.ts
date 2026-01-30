@@ -38,6 +38,12 @@ const routes = {
     testRedirect: '/redirect-rewrite-demo/test-redirect',
     testRewrite: '/redirect-rewrite-demo/test-rewrite',
 
+    mdxDemo: '/mdx-demo',
+    mdxWelcomeDemo: '/mdx-demo/blog/welcome',
+    mdxAboutDemo: '/mdx-demo/blog/about',
+    mdxFeaturesDemo: '/mdx-demo/blog/features',
+    mdxRemoteDemo: '/mdx-demo/remote',
+
     staticParamsDemo: '/static-params-demo',
     staticParamsProductDetailsDemo: (productId: string) => `/static-params-demo/products/${productId}`,
 

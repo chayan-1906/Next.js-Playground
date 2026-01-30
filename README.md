@@ -2384,6 +2384,203 @@ export NEXT_TELEMETRY_DISABLED=1
 ---
 
 <details>
+<summary><strong>19. MDX</strong> - Write Markdown with embedded React components for dynamic content</summary>
+
+### What is MDX?
+
+**MDX = Markdown + JSX.** It lets you write content using Markdown syntax while embedding interactive React components directly in the content.
+
+| Aspect            | Regular Markdown            | MDX                                        |
+|-------------------|-----------------------------|--------------------------------------------|
+| **Content**       | Static text only            | Markdown + React components                |
+| **Interactivity** | None                        | Full React capabilities                    |
+| **Use Case**      | Blog posts, documentation   | Interactive docs, demos, content platforms |
+| **Example**       | `# Hello` only renders text | `<Counter /> ` inside Markdown works!      |
+
+### Setup (3 Steps)
+
+**Step 1: Install dependencies**
+```bash
+npm install @next/mdx @mdx-js/loader @mdx-js/react @types/mdx
+```
+
+**Step 2: Update `next.config.ts`**
+```ts
+import createMDX from '@next/mdx'
+
+const nextConfig = {
+  pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
+}
+
+const withMDX = createMDX({
+  extension: /\.(md|mdx)$/,
+})
+
+export default withMDX(nextConfig)
+```
+
+**Step 3: Create `mdx-components.tsx` at project root**
+```tsx
+import type {MDXComponents} from 'mdx/types'
+
+const components: MDXComponents = {
+  h1: ({children}) => <h1 className={'text-4xl font-bold'}>{children}</h1>,
+  // Map all markdown elements to custom React components
+}
+
+export function useMDXComponents(): MDXComponents {
+  return components
+}
+```
+
+### TypeScript Support for Exports
+
+If you export data from MDX files (like metadata), add to `global.d.ts`:
+```ts
+declare module '*.mdx' {
+  import type {ComponentType} from 'react'
+  import type {MDXComponents} from 'mdx/types'
+
+  const MDXComponent: ComponentType<{components?: MDXComponents}>
+
+  export const metadata: {
+    title?: string
+    author?: string
+    date?: string
+    [key: string]: unknown
+  }
+
+  export default MDXComponent
+}
+```
+
+### 5 Key Patterns
+
+**Pattern 1: MDX as a Page**
+```
+app/
+  blog/
+    page.mdx  ← Directly renders as page
+```
+
+**Pattern 2: Import MDX into .tsx + Local Overrides**
+```tsx
+import Content from './content.mdx'
+
+function Page() {
+  const CustomH1 = ({children}) => <h1 className={'text-red-500'}>{children}</h1>
+  return <Content components={{h1: CustomH1}} />
+}
+```
+
+**Pattern 3: Export Metadata from MDX**
+```mdx
+export const metadata = {
+  title: 'My Post',
+  author: 'John',
+  date: '2026-01-30'
+}
+
+# My Post content...
+```
+
+Then import it:
+```tsx
+import Content, {metadata} from './content.mdx'
+console.log(metadata.title) // "My Post"
+```
+
+**Pattern 4: Dynamic Routes with Import**
+```tsx
+// app/blog/[slug]/page.tsx
+async function Page({params}: {params: Promise<{slug: string}>}) {
+  const {slug} = await params
+  const {default: Post} = await import(`@/content/${slug}.mdx`)
+  return <Post />
+}
+```
+
+**Pattern 5: Remote MDX (from API/CMS)**
+```bash
+npm install next-mdx-remote-client
+```
+
+```tsx
+import {MDXRemote} from 'next-mdx-remote-client/rsc'
+import {useMDXComponents} from '@/mdx-components'
+
+async function RemotePage() {
+  const response = await fetch('your-api/mdx')
+  const markdown = await response.text()
+
+  return <MDXRemote source={markdown} components={useMDXComponents()} />
+}
+```
+
+### Adding remark/rehype Plugins
+
+Enable GitHub Flavored Markdown (tables, strikethrough, etc.):
+```bash
+npm install remark-gfm
+```
+
+Update `next.config.ts`:
+```ts
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: ['remark-gfm'],
+  },
+})
+```
+
+### Key Learnings
+
+**✅ What Works:**
+
+- `page.mdx` acts like `page.tsx` — it's a full page, uses layouts automatically
+- Import MDX as a component: `import Content from './content.mdx'` — just like importing React components
+- Local component overrides via `components` prop override global `mdx-components.tsx`
+- `useMDXComponents()` is **not a React hook** — it's a regular function that returns components (misleading name!)
+- Remote MDX requires `next-mdx-remote-client/rsc` for Server Components (don't use client components for it)
+- Plugins are configured in `next.config.ts`, apply to all MDX files globally
+- `generateStaticParams` + `dynamicParams = false` pre-render blog routes and 404 unknown slugs
+
+**⚠️ Common Gotchas:**
+
+- Trying to use `useMDXComponents` as a hook in client components → it's not a hook, it's just a function
+- Forgetting `mdx-components.tsx` exists → App Router requires it, will error without it
+- Importing from wrong `@mdx-js/react` instead of `@/mdx-components` → TypeScript errors about missing exports
+- Using `"use client"` with `MDXRemote` from `/rsc` → breaks server component features (async)
+- Expecting automatic component discovery → you must explicitly pass components via prop
+- Metadata exports not typed → add `global.d.ts` module declaration so TypeScript knows about them
+- Strikethrough/tables not rendering → you need `remark-gfm` plugin (not built-in)
+
+**🎯 When to Use Each Pattern:**
+
+| Pattern              | Use When                                       |
+|----------------------|------------------------------------------------|
+| **page.mdx**         | Simple content pages (about, blog post)        |
+| **Import into .tsx** | Need custom logic or layout per page           |
+| **Dynamic routes**   | Many pages with similar structure (blog posts) |
+| **Remote MDX**       | Content managed in CMS/database                |
+| **Plugins**          | Need syntax highlighting, GFM, TOC generation  |
+
+### Demo: `http://localhost:3000/mdx-demo`
+
+Complete MDX playground with:
+- `/mdx-demo` — Main demo with interactive Counter component
+- `/mdx-demo/blog/welcome`, `/about`, `/features` — Dynamic blog routes
+- `/mdx-demo/remote` — Fetching MDX from API endpoint
+- Navigation layout with active link highlighting
+
+[Official Docs](https://nextjs.org/docs/app/guides/mdx)
+[MDX Site](https://mdxjs.com)
+
+</details>
+
+---
+
+<details>
 <summary><strong>21. Redirects (redirect, permanentRedirect, next.config.js)</strong> - HTTP redirects, status codes, and when to use each approach</summary>
 
 ### Core Concepts
