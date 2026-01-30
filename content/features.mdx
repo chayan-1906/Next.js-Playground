@@ -1,0 +1,41 @@
+# Features
+
+Explore the key features of our MDX setup.
+
+## Syntax Highlighting
+
+Inline code like `const x = 1` is styled automatically.
+
+```js
+function greet(name) {
+  return `Hello, ${name}!`
+}
+```
+
+## Custom Components
+
+All markdown elements are customized via `mdx-components.tsx`:
+
+- Headings with proper sizing
+- Links using Next.js navigation
+- Images optimized with `next/image`
+- Styled blockquotes and code blocks
+
+## Dynamic Imports
+
+MDX files can be imported dynamically for blog-style routing.
+
+## GFM Features
+
+### Strikethrough
+
+This is ~~old information~~ updated content.
+
+### Table
+
+| Feature | Support | Status |
+|---------|---------|--------|
+| Markdown | ✅ | Complete |
+| JSX Components | ✅ | Complete |
+| Strikethrough | ✅ | ~~Pending~~ Done |
+| Tables | ✅ | Active |
