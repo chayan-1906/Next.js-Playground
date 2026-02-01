@@ -38,6 +38,8 @@ const routes = {
     testRedirect: '/redirect-rewrite-demo/test-redirect',
     testRewrite: '/redirect-rewrite-demo/test-rewrite',
 
+    httpOnlyCookiesDemo: '/http-only-cookies-demo',
+
     mdxDemo: '/mdx-demo',
     mdxWelcomeDemo: '/mdx-demo/blog/welcome',
     mdxAboutDemo: '/mdx-demo/blog/about',
