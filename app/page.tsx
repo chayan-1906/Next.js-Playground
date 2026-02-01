@@ -57,6 +57,10 @@ function Home() {
                     <button className={'w-full px-4 py-3 rounded-xl bg-pink-600 hover:bg-pink-800 transition text-white font-medium cursor-pointer'}>Redirect-Rewrite Demo</button>
                 </Link>
 
+                <Link href={routes.httpOnlyCookiesDemo} className={'block'}>
+                    <button className={'w-full px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-800 transition text-white font-medium cursor-pointer'}>Http-only Cookies Demo</button>
+                </Link>
+
                 <Link href={routes.mdxDemo} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-800 transition text-white font-medium cursor-pointer'}>MDX Demo</button>
                 </Link>

