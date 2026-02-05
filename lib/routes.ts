@@ -40,6 +40,10 @@ const routes = {
 
     httpOnlyCookiesDemo: '/http-only-cookies-demo',
 
+    jsonLdDemo: '/json-ld-demo',
+    jsonLdArticleDemo: '/json-ld-demo/article',
+    jsonLdProductDemo: '/json-ld-demo/product',
+
     mdxDemo: '/mdx-demo',
     mdxWelcomeDemo: '/mdx-demo/blog/welcome',
     mdxAboutDemo: '/mdx-demo/blog/about',

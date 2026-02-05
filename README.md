@@ -2246,6 +2246,161 @@ lib/actions/
 ---
 
 <details>
+<summary><strong>17. JSON-LD</strong> - Structured data for search engines and AI crawlers</summary>
+
+### What is JSON-LD?
+
+**The Problem:** A human reads your page and instantly understands "this is an article, by someone, on a date." A search engine sees HTML tags and text — it has to *guess* what's what.
+
+**The Solution:** JSON-LD is explicit, labeled data for machines:
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "How to bake a cake",
+  "author": { "@type": "Person", "name": "John" },
+  "datePublished": "2026-01-15"
+}
+```
+
+**Why it matters:** Google shows **rich results** (star ratings, breadcrumbs, author names) for pages with valid JSON-LD. These stand out in search and increase click-through rates.
+
+### Core Concepts
+
+| Concept                   | Explanation                                                                                  |
+|---------------------------|----------------------------------------------------------------------------------------------|
+| `@context`                | Always `'https://schema.org'` — the shared vocabulary                                        |
+| `@type`                   | The entity type (`Article`, `Product`, `Organization`, etc.) — **case-sensitive!**           |
+| `schema.org`              | The spec. Defines all types and their properties. **This is your source of truth.**          |
+| `dangerouslySetInnerHTML` | React's escape hatch to inject raw HTML. Required because React escapes children by default. |
+| XSS prevention            | `.replace(/</g, '\\u003c')` — sanitize `<` characters to prevent injection attacks           |
+
+### Schema Types We Implemented
+
+| Type             | Purpose                   | Placement                      | Key Properties                                                                |
+|------------------|---------------------------|--------------------------------|-------------------------------------------------------------------------------|
+| `Article`        | Blog posts, news articles | `page.tsx`                     | `headline`, `author` (Person object), `datePublished`, `description`, `image` |
+| `Product`        | E-commerce listings       | `page.tsx`                     | `name`, `brand`, `description`, `image`, `offers` (Offer object with price)   |
+| `Organization`   | Company/brand info        | `layout.tsx` (site-wide)       | `name`, `url`, `logo`, `description`, `sameAs` (social links array)           |
+| `BreadcrumbList` | Navigation trail          | `page.tsx` (alongside content) | `itemListElement` (array of ListItem objects)                                 |
+
+### How to Know Property Types (The Key Insight)
+
+**Don't guess. Look it up on schema.org.**
+
+1. Go to `schema.org/<Type>` (e.g., `schema.org/Product`)
+2. Find the property
+3. Check what type it expects:
+   - If it says `Text`, `Number`, `Date` → **plain value**
+   - If it says another schema type (`Person`, `Offer`, `Organization`) → **nested object with its own `@type`**
+
+**Example:**
+- `Product.name` → expects `Text` → `name: 'iPhone'`
+- `Product.offers` → expects `Offer` → `offers: { '@type': 'Offer', price: 999, priceCurrency: 'USD' }`
+- `Article.author` → expects `Person` or `Organization` → `author: { '@type': 'Person', name: 'John' }`
+
+### Key Learnings
+
+**✅ What Works:**
+
+- One `<script type="application/ld+json">` per schema object
+- Multiple schemas on one page = multiple script tags (Article + BreadcrumbList)
+- Organization in `layout.tsx` — applies to all pages under that layout
+- Page-specific schemas (Article, Product) in `page.tsx`
+- `sameAs` takes an **array** of social media URLs
+- `price` must be a **number**, currency is separate (`priceCurrency`)
+
+**⚠️ Common Gotchas:**
+
+- ❌ `@type: 'product'` → Must be `'Product'` (case-sensitive)
+- ❌ `about: '...'` → Use `description` (schema.org property name)
+- ❌ `price: '₹1,34,900'` → Must be number: `price: 134900`, `priceCurrency: 'INR'`
+- ❌ `author: 'John'` → Must be object: `author: { '@type': 'Person', name: 'John' }`
+- ❌ Putting two `@type` in one object → Each schema needs its own object/script tag
+- ❌ Guessing property structure → Always verify on schema.org
+
+**📍 Placement Decision:**
+
+| Question                    | Answer                              |
+|-----------------------------|-------------------------------------|
+| Same data across all pages? | `layout.tsx` (e.g., Organization)   |
+| Data unique to this page?   | `page.tsx` (e.g., Article, Product) |
+
+### Implementation Pattern
+
+```tsx
+// 1. Mock data (single source of truth)
+const article = {
+    headline: 'My Article',
+    author: 'John Doe',
+    datePublished: '2026-01-15T08:00:00+00:00',
+    description: 'Article summary',
+    image: 'https://example.com/image.jpg',
+};
+
+// 2. JSON-LD object (references mock data)
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.headline,
+    author: {
+        '@type': 'Person',
+        name: article.author,
+    },
+    datePublished: article.datePublished,
+    description: article.description,
+    image: article.image,
+};
+
+// 3. Render in component
+<script
+    type={'application/ld+json'}
+    dangerouslySetInnerHTML={{__html: JSON.stringify(jsonLd).replace(/</g, '\\u003c')}}
+/>
+```
+
+### BreadcrumbList Structure
+
+```tsx
+const breadcrumbList = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'http://localhost:3000' },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: 'http://localhost:3000/blog' },
+        { '@type': 'ListItem', position: 3, name: 'Article', item: 'http://localhost:3000/blog/article' },
+    ],
+};
+// Note: position is a NUMBER, not a string. schema.org expects Integer.
+```
+
+### File Structure
+
+```
+app/json-ld-demo/
+  layout.tsx           ← Organization schema (site-wide, invisible)
+  page.tsx             ← Index with links to demos
+  article/
+    page.tsx           ← Article + BreadcrumbList schemas
+  product/
+    page.tsx           ← Product schema
+```
+
+### Demo: `http://localhost:3000/json-ld-demo`
+
+**How to Validate:**
+1. Run your dev server
+2. Open the page in browser
+3. View Page Source → find `<script type="application/ld+json">`
+4. Copy the JSON and paste into [Google Rich Results Test](https://search.google.com/test/rich-results) or [Schema Markup Validator](https://validator.schema.org/)
+
+[Official Next.js Docs](https://nextjs.org/docs/app/guides/json-ld) | [schema.org](https://schema.org/)
+
+</details>
+
+---
+
+<details>
 <summary><strong>18. Next.js MCP Server (next-devtools-mcp)</strong> - AI-powered runtime diagnostics and documentation access for Next.js 16+</summary>
 
 ### Why MCP Matters

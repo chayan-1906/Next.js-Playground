@@ -61,6 +61,10 @@ function Home() {
                     <button className={'w-full px-4 py-3 rounded-xl bg-violet-600 hover:bg-violet-800 transition text-white font-medium cursor-pointer'}>Http-only Cookies Demo</button>
                 </Link>
 
+                <Link href={routes.jsonLdDemo} className={'block'}>
+                    <button className={'w-full px-4 py-3 rounded-xl bg-green-600 hover:bg-green-800 transition text-white font-medium cursor-pointer'}>JSON-LD Demo</button>
+                </Link>
+
                 <Link href={routes.mdxDemo} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-800 transition text-white font-medium cursor-pointer'}>MDX Demo</button>
                 </Link>
