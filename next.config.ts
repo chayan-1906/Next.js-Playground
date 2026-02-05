@@ -22,6 +22,14 @@ const nextConfig: NextConfig = {
                 protocol: 'https',
                 hostname: 'm.media-amazon.com',
             },
+            {
+                protocol: 'https',
+                hostname: 'miro.medium.com',
+            },
+            {
+                protocol: 'https',
+                hostname: 'toppng.com',
+            },
         ],
     },
     async redirects() {
