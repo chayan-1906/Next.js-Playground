@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {routes} from "@/lib/routes";
 
-function JSONLdPage() {
+function JSONLdDemoPage() {
     return (
         <div>
             <div className={'mb-8'}>
@@ -45,4 +45,4 @@ function JSONLdPage() {
     );
 }
 
-export default JSONLdPage;
+export default JSONLdDemoPage;

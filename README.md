@@ -3881,3 +3881,189 @@ catch-optional-all-demo/
 </details>
 
 ---
+
+<details>
+<summary><strong>30. React use() Hook</strong> - Read Context conditionally and unwrap Promises with Suspense integration</summary>
+
+### What is `use()`?
+
+`use` is a React 19 API that reads the value of a resource — either a **Context** or a **Promise**. Unlike every other hook, it can be called inside conditionals and loops.
+
+```tsx
+import { use } from "react";
+
+const value = use(resource); // resource = Context or Promise
+```
+
+### Why Hooks Can't Be Called Conditionally (Background)
+
+React tracks hooks by **call order** (index position), not by name. Every render must call hooks in the exact same order:
+
+```tsx
+// ❌ BREAKS — hook order shifts between renders
+function MyComponent({ isLoggedIn }: { isLoggedIn: boolean }) {
+  const [name, setName] = useState('Alice');   // Hook #1
+  if (isLoggedIn) {
+    const theme = useContext(ThemeContext);      // Hook #2 (sometimes)
+  }
+  const [count, setCount] = useState(0);        // Hook #2 or #3 ???
+}
+```
+
+- Render 1 (`isLoggedIn = true`): `#1 useState`, `#2 useContext`, `#3 useState`
+- Render 2 (`isLoggedIn = false`): `#1 useState`, `#2 useState` — shifted! React loses track.
+
+**`use` is designed differently** — it's not tracked in the hooks array the same way. It works as a "read this value right now" operation.
+
+### Use Case 1: `use(Context)` — Conditional Context Reading
+
+`use(ThemeContext)` replaces `useContext(ThemeContext)` with one key advantage — it works inside `if`, `for`, and early returns:
+
+```tsx
+// ✅ Works with use() — impossible with useContext()
+function ThemedBox({ show }: { show: boolean }) {
+  if (show) {
+    const { theme } = use(ThemeContext);
+    return <div>Current theme: {theme}</div>;
+  }
+  return <div>ThemedBox Hidden</div>;
+}
+```
+
+**React 19 Context change:** Use `<ThemeContext value={...}>` directly instead of `<ThemeContext.Provider value={...}>`. The `.Provider` syntax is deprecated.
+
+### Use Case 2: `use(Promise)` — Server-to-Client Promise Passing
+
+This is the more powerful pattern, especially in Next.js:
+
+1. **Server Component** creates a promise (fetch call)
+2. Passes the **unresolved promise** as a prop to a Client Component
+3. **Client Component** calls `use(promise)` — suspends until resolved
+4. `<Suspense>` boundary shows a fallback while waiting
+
+```tsx
+// Server Component — page.tsx (NO "use client")
+function UsersPage() {
+  const usersPromise: Promise<User[]> = fetch('https://api.example.com/users')
+    .then((response: Response) => response.json());
+
+  return (
+    <div>
+      <ClientUserList usersPromise={usersPromise} />
+    </div>
+  );
+}
+
+// Client Component — ClientUserList.tsx
+"use client";
+import { Suspense, use } from "react";
+
+function ClientUserList({ usersPromise }: { usersPromise: Promise<User[]> }) {
+  return (
+    <Suspense fallback={<div>Loading users...</div>}>
+      <UserListInner usersPromise={usersPromise} />
+    </Suspense>
+  );
+}
+
+function UserListInner({ usersPromise }: { usersPromise: Promise<User[]> }) {
+  const users: User[] = use(usersPromise);
+  return <ul>{users.map(u => <li key={u.id}>{u.name}</li>)}</ul>;
+}
+```
+
+### Common Confusion #1: Why Not Just `await` in the Server Component?
+
+**Initial thought:**
+> "An async Server Component with `await` works fine. Why pass a Promise to a Client Component?"
+
+**The difference:**
+
+| Approach                    | What the user sees during fetch                                          |
+|-----------------------------|--------------------------------------------------------------------------|
+| `await` in Server Component | Nothing renders — entire component blocked until data arrives            |
+| Pass Promise + `use()`      | Page shell renders immediately, only the data section shows "Loading..." |
+
+**Key insight:** Passing a promise enables **streaming** — the server sends the page shell instantly and streams in the data when ready. You get granular loading states instead of an all-or-nothing render.
+
+### Common Confusion #2: Does This Expose API Calls to the Client?
+
+**Initial thought:**
+> "If the Client Component consumes the promise, the `fetch()` must happen on the client. The API call would be visible in the Network tab."
+
+**Reality:** The `fetch()` executes **on the server** (inside the Server Component). The promise is serialized and streamed to the client. The client never makes the API call — it just receives the resolved data. Nothing shows up in the browser's Network tab.
+
+You get **both** benefits: server-side data fetching (hidden from client) AND non-blocking UI with granular loading states.
+
+### Common Confusion #3: Why Not Create the Promise in the Client Component?
+
+If you create the promise inside the Client Component:
+
+1. Component renders → `fetch()` creates **Promise A** → `use()` suspends
+2. Promise A resolves → component re-renders to show data
+3. On re-render, `fetch()` runs again → creates **Promise B** (new reference)
+4. `use()` sees a new promise → suspends again → "Loading..."
+5. **Infinite loop** of loading → data → loading → data
+
+When the promise is created in the **Server Component** and passed as a prop, it's a **stable reference** that doesn't change between Client Component re-renders.
+
+### Common Confusion #4: `Promise<Response>` vs `Promise<Data>`
+
+When passing a promise from Server to Client, resolved values **must be serializable** (plain objects, arrays, strings, numbers). A `Response` object is a class instance — not serializable.
+
+```tsx
+// ❌ FAILS — Response is a class instance, not serializable
+const usersPromise = fetch('https://api.example.com/users');
+
+// ✅ WORKS — resolves to plain JSON data
+const usersPromise = fetch('https://api.example.com/users')
+  .then((response: Response) => response.json());
+```
+
+### `use()` vs `useContext` vs `await`
+
+| Feature               | `use`        | `useContext` | `await` (Server) |
+|-----------------------|--------------|--------------|------------------|
+| Conditional calling   | ✅            | ❌            | ✅                |
+| Works with Promises   | ✅            | ❌            | ✅                |
+| In loops/conditionals | ✅            | ❌            | ✅                |
+| Blocks rendering      | ❌ (Suspense) | N/A          | ✅                |
+
+### Key Learnings
+
+**✅ What You Need to Know:**
+
+1. **`use` can be called in conditionals/loops** — unlike every other React hook
+2. **Two resources:** Works with Context and Promises
+3. **Context:** Drop-in replacement for `useContext` with more flexibility
+4. **Promises:** Create in Server Component, pass to Client Component, consume with `use()`
+5. **Suspense integration:** Wrap the `use(promise)` consumer in `<Suspense>` for loading states
+6. **Streaming:** Promise pattern enables streaming — page shell renders immediately
+7. **API calls stay server-side:** Even though a Client Component consumes the data, the fetch happens on the server
+
+**⚠️ Common Gotchas:**
+
+- `use()` cannot be used inside try-catch blocks — use Error Boundaries or `.catch()` instead
+- Promises passed to Client Components must resolve to **serializable** values (no `Response`, no class instances)
+- Creating promises inside Client Components causes infinite re-render loops (unstable references)
+- `use(Context)` searches **upward only** — it won't find a Provider rendered in the same component
+- Server Components should prefer `async`/`await` when they need the data themselves
+
+### Demo: `http://localhost:3000/react-use-demo`
+
+Structure:
+```
+react-use-demo/
+  page.tsx                          ← Hub page with links to both demos
+  context/
+    page.tsx                        ← use(Context) — conditional theme reading
+  promise/
+    page.tsx                        ← Server Component — creates promise
+    ClientUsePromise.tsx            ← Client Component — use(promise) with Suspense
+```
+
+[Official Docs](https://react.dev/reference/react/use)
+
+</details>
+
+---

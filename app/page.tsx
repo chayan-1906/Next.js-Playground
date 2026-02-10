@@ -77,6 +77,10 @@ function Home() {
                     <button className={'w-full px-4 py-3 rounded-xl bg-teal-600 hover:bg-teal-800 transition text-white font-medium cursor-pointer'}>Catch-All/Optional Cahch-All Demo</button>
                 </Link>
 
+                <Link href={routes.useDemo} className={'block'}>
+                    <button className={'w-full px-4 py-3 rounded-xl bg-stone-600 hover:bg-stone-800 transition text-white font-medium cursor-pointer'}>use Hook</button>
+                </Link>
+
                 <Link href={routes.funda} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-sky-600 hover:bg-sky-800 transition text-white font-medium cursor-pointer'}>FUNDA</button>
                 </Link>

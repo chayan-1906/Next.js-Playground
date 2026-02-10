@@ -60,6 +60,10 @@ const routes = {
     optionalCatchAllDemo1Segment: '/catch-optional-all-demo/optional-catch-all/firstSegment',
     optionalCatchAllDemo2Segments: '/catch-optional-all-demo/optional-catch-all/firstSegment/secondSegment',
 
+    useDemo: '/react-use-demo',
+    useContextDemo: '/react-use-demo/context',
+    usePromiseDemo: '/react-use-demo/promise',
+
     funda: '/funda',
     fundaPeople: '/funda/people',
     fundaCompanies: '/funda/companies',
