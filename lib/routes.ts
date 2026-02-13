@@ -64,6 +64,8 @@ const routes = {
     useContextDemo: '/react-use-demo/context',
     usePromiseDemo: '/react-use-demo/promise',
 
+    draftModeDemo: '/draft-mode-demo',
+
     funda: '/funda',
     fundaPeople: '/funda/people',
     fundaCompanies: '/funda/companies',
