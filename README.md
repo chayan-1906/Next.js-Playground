@@ -1153,11 +1153,11 @@ Phase 1 covered **Intercepting Routes** (modals on navigation).
 
 **Parallel Routes vs Route Groups:**
 
-| Aspect | Route Groups `()` | Parallel Routes `@` |
-|--------|-------------------|---------------------|
-| **URL routing** | ✅ Still routable | ❌ NOT routable |
-| **Purpose** | Organize files | Create slots for parallel rendering |
-| **Example** | `(auth)/login` → `/login` | `@stats` → No URL, it's a prop! |
+| Aspect          | Route Groups `()`         | Parallel Routes `@`                 |
+|-----------------|---------------------------|-------------------------------------|
+| **URL routing** | ✅ Still routable          | ❌ NOT routable                      |
+| **Purpose**     | Organize files            | Create slots for parallel rendering |
+| **Example**     | `(auth)/login` → `/login` | `@stats` → No URL, it's a prop!     |
 
 **The `@` prefix means:** "This is a slot, not a route. Pass it to parent layout as a prop."
 
@@ -1662,12 +1662,12 @@ export const getProduct = cache(async (collection: string, productId: string) =>
 
 #### How It Works (Phase 4)
 
-| Action | Route | Layout | Behavior |
-|--------|-------|--------|----------|
-| Click product from grid | `(.)products/[productId]` | Modal layout | Intercepting route catches navigation → Shows modal |
-| Direct visit URL | `products/[productId]` | Full page layout | No interception → Shows full page |
-| Refresh while on product | `products/[productId]` | Full page layout | No navigation context → Shows full page |
-| Click X or outside modal | - | - | `router.back()` → Returns to grid |
+| Action                   | Route                     | Layout           | Behavior                                            |
+|--------------------------|---------------------------|------------------|-----------------------------------------------------|
+| Click product from grid  | `(.)products/[productId]` | Modal layout     | Intercepting route catches navigation → Shows modal |
+| Direct visit URL         | `products/[productId]`    | Full page layout | No interception → Shows full page                   |
+| Refresh while on product | `products/[productId]`    | Full page layout | No navigation context → Shows full page             |
+| Click X or outside modal | -                         | -                | `router.back()` → Returns to grid                   |
 
 ### Demo (Phase 4): `http://localhost:3000/intercepting-parallel-demo/products-demo`
 
@@ -3184,15 +3184,15 @@ Think of redirect types based on your intention:
 
 ### Core Concepts
 
-| Feature                  | Purpose                                                 | Usage                           | Next.js 16 Behavior                                   |
-|--------------------------|--------------------------------------------------------|---------------------------------|-------------------------------------------------------|
-| `generateStaticParams()` | Pre-warm cache at build time for dynamic routes         | Export from `page.tsx`          | Cache warming hint, NOT static HTML generation        |
-| `"use cache"`            | Enable caching for function/component output            | Directive in function body      | Runtime cache with revalidation (default: 15min, 1yr) |
-| `cacheComponents: true`  | Enable Cache Components (PPR + granular cache control)  | `next.config.ts`                | Disables old route segment configs                    |
-| `◐` (PPR symbol)         | Partial Prerender - static shell + dynamic content      | Build output indicator          | Default with Cache Components enabled                 |
-| `○` (Static symbol)      | Fully static - complete HTML at build time              | Build output indicator          | Not achievable with Cache Components (old model only) |
-| `dynamicParams`          | Control access to params not in `generateStaticParams`  | `export const dynamicParams`    | ❌ NOT compatible with Cache Components               |
-| `dynamic`                | Force route rendering behavior                          | `export const dynamic`          | ❌ NOT compatible with Cache Components               |
+| Feature                  | Purpose                                                | Usage                        | Next.js 16 Behavior                                   |
+|--------------------------|--------------------------------------------------------|------------------------------|-------------------------------------------------------|
+| `generateStaticParams()` | Pre-warm cache at build time for dynamic routes        | Export from `page.tsx`       | Cache warming hint, NOT static HTML generation        |
+| `"use cache"`            | Enable caching for function/component output           | Directive in function body   | Runtime cache with revalidation (default: 15min, 1yr) |
+| `cacheComponents: true`  | Enable Cache Components (PPR + granular cache control) | `next.config.ts`             | Disables old route segment configs                    |
+| `◐` (PPR symbol)         | Partial Prerender - static shell + dynamic content     | Build output indicator       | Default with Cache Components enabled                 |
+| `○` (Static symbol)      | Fully static - complete HTML at build time             | Build output indicator       | Not achievable with Cache Components (old model only) |
+| `dynamicParams`          | Control access to params not in `generateStaticParams` | `export const dynamicParams` | ❌ NOT compatible with Cache Components                |
+| `dynamic`                | Force route rendering behavior                         | `export const dynamic`       | ❌ NOT compatible with Cache Components                |
 
 ### The Fundamental Shift: Old vs New Model
 
@@ -4063,6 +4063,163 @@ react-use-demo/
 ```
 
 [Official Docs](https://react.dev/reference/react/use)
+
+</details>
+
+---
+
+<details>
+<summary><strong>33. Draft Mode</strong> - Preview unpublished CMS content without rebuilding your site</summary>
+
+### What Problem Does Draft Mode Solve?
+
+When pages are statically generated (SSG), data is fetched at **build time** and baked into HTML. If a content editor saves a draft in a headless CMS (Hygraph, Contentful, Sanity, etc.), that draft is **invisible** on the site until it's published and the site is rebuilt.
+
+Draft Mode solves this by switching from static to **dynamic rendering** for a specific user's session — so they can preview unpublished content without affecting anyone else.
+
+### How It Works (The Cookie Mechanism)
+
+1. A Route Handler calls `draftMode().enable()` — this sets a **signed cookie** (`__prerender_bypass`)
+2. On subsequent requests, Next.js detects this cookie and switches to dynamic rendering
+3. Your page reads `draftMode().isEnabled` and fetches draft content accordingly
+4. Calling `draftMode().disable()` removes the cookie, returning to static behavior
+
+### Two Separate Concerns
+
+| Concern                           | Who Handles It              | Example                                         |
+|-----------------------------------|-----------------------------|-------------------------------------------------|
+| **When** to re-render dynamically | Next.js Draft Mode (cookie) | `draftMode().enable()` / `.disable()`           |
+| **What** data to fetch            | Your CMS query logic        | `stage: DRAFT` vs `stage: PUBLISHED` in Hygraph |
+
+Draft Mode doesn't know about your CMS. Your CMS doesn't know about Draft Mode. Your code ties them together:
+
+```tsx
+const { isEnabled } = await draftMode()
+
+const data = await hygraphClient.request(GET_POST_QUERY, {
+  slug: 'my-post',
+  stage: isEnabled ? 'DRAFT' : 'PUBLISHED',
+})
+```
+
+### The `draftMode()` API
+
+```tsx
+import { draftMode } from "next/headers";
+
+const draft = await draftMode();
+
+draft.isEnabled  // boolean — is draft mode active?
+draft.enable()   // sets the signed cookie
+draft.disable()  // removes the cookie
+```
+
+### Common Confusion #1: The Cookie Is Not a Simple Boolean
+
+**Initial thought:**
+> "I'll just manually set `__prerender_bypass = 'true'` with `cookies().set()`."
+
+**Reality:** The `__prerender_bypass` cookie contains a **signed value** generated by Next.js at build time — not a simple `'true'`/`'false'`. If you set it manually, Next.js won't recognize it, and `draftMode().isEnabled` will return `false`. You **must** use `draft.enable()` / `draft.disable()` because only they know the correct signature.
+
+Think of it like a JWT vs setting `loggedIn=true` in a cookie — the signature is what makes it trustworthy.
+
+### Common Confusion #2: Can't Pass `draftMode()` Object to Client Components
+
+**Initial thought:**
+> "I'll pass the whole `draft` object to my Client Component and call `draft.disable()` from there."
+
+**The error:**
+```
+Only plain objects, and a few built-ins, can be passed to Client Components
+from Server Components. Classes or null prototypes are not supported.
+```
+
+**Why it fails:** The `draftMode()` return value is a server-side internal object with methods and a `_provider`. Client Components can only receive **serializable** data (strings, numbers, booleans, plain objects). Even if you could pass it, `draft.enable()`/`draft.disable()` manipulate server-side cookies — they can't run on the client.
+
+**Correct pattern:** Pass only `draft.isEnabled` (a boolean) to the Client Component. Toggle via a Route Handler:
+
+```
+Server Component → reads draftMode().isEnabled → passes boolean to Client Component
+Client Component → calls /api/toggle-draft (Route Handler) → router.refresh()
+Route Handler → calls draftMode().enable() / .disable() on the server
+```
+
+### Common Confusion #3: Why `router.refresh()` After Toggling?
+
+After the Client Component calls the Route Handler to toggle draft mode, the cookie has changed on the server — but the page still shows the old content.
+
+`router.refresh()` tells Next.js to **re-fetch the Server Component tree from the server** without a full page navigation:
+
+- The server re-executes your page function
+- `await draftMode()` now reads the updated cookie
+- `isEnabled` has a new value → different content renders
+- Client-side state (like loading spinners) is preserved — it's not a full page reload
+
+### Architecture Pattern
+
+```
+┌──────────────────────────────┐
+│  Server Component (page.tsx) │
+│                              │
+│  await draftMode()           │
+│  → isEnabled = true/false    │
+│  → getContent(isEnabled)     │
+│  → render content + toggle   │
+└──────────┬───────────────────┘
+           │ passes isEnabled (boolean)
+           ▼
+┌──────────────────────────────┐
+│  Client Component (toggle)   │
+│                              │
+│  onClick:                    │
+│  1. fetch('/api/toggle-draft')│
+│  2. router.refresh()         │
+└──────────┬───────────────────┘
+           │ POST request
+           ▼
+┌──────────────────────────────┐
+│  Route Handler (API)         │
+│                              │
+│  draftMode().enable()        │
+│  or draftMode().disable()    │
+│  → sets/removes signed cookie│
+└──────────────────────────────┘
+```
+
+### Key Learnings
+
+**✅ What You Need to Know:**
+
+1. **Draft Mode = per-user dynamic rendering switch** — SSG for everyone else, dynamic for the editor
+2. **Cookie-based** — the `__prerender_bypass` cookie is signed, not a simple boolean
+3. **Use the API** — always use `draft.enable()` / `draft.disable()`, never set the cookie manually
+4. **Server-side only** — `draftMode()` runs on the server; pass only the boolean to Client Components
+5. **`router.refresh()`** — re-fetches the Server Component tree after toggling, preserving client state
+6. **CMS-agnostic** — Draft Mode handles the rendering switch; your query logic handles which data to fetch
+
+**⚠️ Common Gotchas:**
+
+- Manually setting `__prerender_bypass` cookie won't work — the value must be signed by Next.js
+- The `draftMode()` object is not serializable — cannot be passed to Client Components
+- Draft Mode state persists across navigations within the same session (cookie-based)
+- In production, secure your draft Route Handler with a secret token to prevent unauthorized access
+
+### Demo: `http://localhost:3000/draft-mode-demo`
+
+Structure:
+```
+draft-mode-demo/
+  page.tsx                        ← Server Component — reads draftMode().isEnabled, renders content
+  ClientDraftSwitch.tsx           ← Client Component — toggle button, calls API + router.refresh()
+
+api/toggle-draft/
+  route.ts                        ← Route Handler — draftMode().enable() / .disable()
+
+lib/queries/
+  draft-content.queries.ts        ← Mock data source — simulates CMS draft vs published content
+```
+
+[Official Docs](https://nextjs.org/docs/app/guides/draft-mode)
 
 </details>
 

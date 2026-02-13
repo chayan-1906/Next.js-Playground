@@ -81,6 +81,10 @@ function Home() {
                     <button className={'w-full px-4 py-3 rounded-xl bg-stone-600 hover:bg-stone-800 transition text-white font-medium cursor-pointer'}>use Hook</button>
                 </Link>
 
+                <Link href={routes.draftModeDemo} className={'block'}>
+                    <button className={'w-full px-4 py-3 rounded-xl bg-yellow-600 hover:bg-yellow-800 transition text-white font-medium cursor-pointer'}>Draft Mode</button>
+                </Link>
+
                 <Link href={routes.funda} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-sky-600 hover:bg-sky-800 transition text-white font-medium cursor-pointer'}>FUNDA</button>
                 </Link>
