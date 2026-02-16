@@ -73,6 +73,10 @@ function Home() {
                     <button className={'w-full px-4 py-3 rounded-xl bg-orange-600 hover:bg-orange-800 transition text-white font-medium cursor-pointer'}>Static Params Demo</button>
                 </Link>
 
+                <Link href={routes.useSWRDemo} className={'block'}>
+                    <button className={'w-full px-4 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-800 transition text-white font-medium cursor-pointer'}>Use SWR Demo</button>
+                </Link>
+
                 <Link href={routes.catchOptionalAllDemo} className={'block'}>
                     <button className={'w-full px-4 py-3 rounded-xl bg-teal-600 hover:bg-teal-800 transition text-white font-medium cursor-pointer'}>Catch-All/Optional Cahch-All Demo</button>
                 </Link>

@@ -53,6 +53,8 @@ const routes = {
     staticParamsDemo: '/static-params-demo',
     staticParamsProductDetailsDemo: (productId: string) => `/static-params-demo/products/${productId}`,
 
+    useSWRDemo: '/use-swr-demo',
+
     catchOptionalAllDemo: '/catch-optional-all-demo',
     catchAllDemo1Segment: '/catch-optional-all-demo/catch-all/firstSegment',
     catchAllDemo2Segments: '/catch-optional-all-demo/catch-all/firstSegment/secondSegment',

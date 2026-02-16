@@ -3687,6 +3687,175 @@ Runtime (first visit to any product):
 ---
 
 <details>
+<summary><strong>25. SWR with Server Components</strong> - Server-side fallback + client-side revalidation for instant data with live updates</summary>
+
+### What is SWR?
+
+SWR (Stale-While-Revalidate) is a React data fetching library by Vercel. The core strategy:
+
+1. **Return cached (stale) data immediately** — UI is fast
+2. **Fetch fresh data in the background** — revalidate
+3. **Update the UI** when the fresh data arrives
+
+### The Problem SWR Solves (and its limitation)
+
+In a pure client-side app, `useSWR` fetches data in the browser:
+
+```tsx
+const { data, error } = useSWR('/api/user', fetcher)
+```
+
+This means on **first page load**: empty HTML → download JS → run SWR → fetch data → render. The user sees a loading spinner until the client-side fetch completes.
+
+### The SWR + Server Component Pattern
+
+Next.js solves this by combining **server-side data** with **client-side SWR**:
+
+| Layer                           | What it does                                                                                                               |
+|---------------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| **Server Component (page.tsx)** | Calls the data function directly (DB, server function — no API route needed), passes result as `fallback` to `<SWRConfig>` |
+| **`<SWRConfig fallback>`**      | Makes server data available to any child `useSWR` call with a matching key                                                 |
+| **Client Component**            | Uses `useSWR(key, fetcher)` as usual — finds fallback data immediately, then revalidates on the client                     |
+
+Result: **Instant data on first load** (from server) + **live client-side updates** (from SWR).
+
+### How the Fallback Key Works
+
+The SWR key must match between server and client:
+
+```tsx
+// Server: provides data under key '/api/timestamp'
+<SWRConfig value={{ fallback: { '/api/timestamp': timePromise } }}>
+
+// Client: reads data using the same key '/api/timestamp'
+const { data } = useSWR('/api/timestamp', fetcher)
+```
+
+SWR looks up the key in the fallback object. If found → use it immediately (no loading state). The `fetcher` is only used for subsequent client-side revalidations.
+
+### Common Confusion #1: Fallback Prevents Loading State, Not Network Requests
+
+**Initial thought:**
+> "If the server provides fallback data, SWR won't make any network request on first load."
+
+**Reality:** SWR has `revalidateOnMount: true` by default. Even with fallback data, SWR **will** fire a background request on mount to get fresh data. The fallback prevents the **loading state**, not the network request.
+
+- **With fallback:** Data shown instantly → SWR revalidates in background → UI updates silently
+- **Without fallback:** "Loading..." shown → SWR fetches → data appears
+
+To suppress the mount request entirely: `revalidateOnMount: false` (usually not recommended).
+
+### Common Confusion #2: Promise Fallback Requires Suspense, Not isLoading
+
+**Initial thought:**
+> "I'll check `isLoading` from `useSWR` to show a loading spinner."
+
+**Reality:** When the fallback is a **Promise** (not resolved data), SWR uses React's `use()` internally, which **suspends** the component. The `isLoading` check fires before SWR gets to suspend, so you see loading even with fallback.
+
+**Correct pattern:** Use `<Suspense>` boundary around the component, and remove `isLoading` checks:
+
+```tsx
+// page.tsx (Server Component)
+<Suspense fallback={<Loading />}>
+    <CurrentTime />
+</Suspense>
+
+// CurrentTime.tsx (Client Component) — NO isLoading check
+const { data, error } = useSWR<TimeData>('/api/timestamp', fetcher)
+```
+
+### Common Confusion #3: "use server" Files Can Only Export Functions
+
+**The error:**
+```
+Export TimeData doesn't exist in target module
+```
+
+**Why:** A file with `"use server"` is a Server Actions module. It can only export **async functions** (actions). Type exports are not runtime values, but the bundler still processes them as exports and fails.
+
+**Fix:** Move types to a separate file (e.g., `types/swr-time.ts`) and import from there.
+
+### Common Confusion #4: `new Date()` in Server Components (Next.js 16)
+
+**The error:**
+```
+Route "/use-swr-demo" used `new Date()` before accessing uncached data
+```
+
+**Why:** Next.js 16 tries to prerender pages at build time. `new Date()` returns a different value each time, which conflicts with static prerendering.
+
+**Fix:** Call `await connection()` from `next/server` before `new Date()` to signal this is a dynamic function:
+
+```tsx
+import { connection } from "next/server";
+
+const getServerTime = async () => {
+    await connection(); // opt out of prerendering
+    const timestamp = new Date().toISOString();
+    // ...
+};
+```
+
+### Three Modes of SWR
+
+| Mode                    | Code                                  | Use case                                         |
+|-------------------------|---------------------------------------|--------------------------------------------------|
+| **Client-only**         | `useSWR(key, fetcher)`                | Traditional SPA, no server involvement           |
+| **Server-only**         | `useSWR(key)` + RSC fallback          | Server provides data, no client revalidation     |
+| **Mixed (recommended)** | `useSWR(key, fetcher)` + RSC fallback | Server provides initial data, client revalidates |
+
+### Relationship to Other Caching Approaches
+
+| Approach                  | Scope                       | Purpose                                                               |
+|---------------------------|-----------------------------|-----------------------------------------------------------------------|
+| React `cache()`           | Per-request (single render) | Deduplicates identical calls within one request                       |
+| `unstable_cache` (v14-15) | Cross-request (Data Cache)  | Persists results across multiple requests (replaced by `"use cache"`) |
+| `"use cache"` (v16+)      | Cross-request (Data Cache)  | Directive-based replacement for `unstable_cache`                      |
+| **SWR + fallback**        | Server → Client handoff     | Server-rendered initial data + live client-side updates               |
+
+### Key Learnings
+
+**✅ What You Need to Know:**
+
+1. **SWR fallback = instant first render** — data from the server, no loading flash
+2. **Fallback key must match** — the key in `SWRConfig fallback` must equal the key in `useSWR(key, ...)`
+3. **Promise fallback needs Suspense** — don't use `isLoading`, let React suspend
+4. **Types can't live in "use server" files** — move them to a separate `types/` file
+5. **`connection()` before `new Date()`** — required in Next.js 16 to opt out of prerendering
+6. **SWR still fetches on mount** — fallback prevents loading state, not network requests
+
+**⚠️ Common Gotchas:**
+
+- `isLoading` will be `true` even with fallback if you don't use Suspense (because fallback is a Promise)
+- SWR's `refreshInterval` and `revalidateOnMount` run client-side only — server fallback is a one-time handoff
+- The server function and API route must return the **same data shape** for the key to work correctly
+- `"use server"` files can only export async functions — no types, no constants, no objects
+
+### Demo: `http://localhost:3000/use-swr-demo`
+
+Structure:
+```
+use-swr-demo/
+  page.tsx                        ← Server Component — calls getServerTime(), wraps in SWRConfig fallback
+  CurrentTime.tsx                 ← Client Component — useSWR with refreshInterval, shows live timestamp
+
+api/timestamp/
+  route.ts                        ← API route — returns { timestamp, message } for client-side revalidation
+
+lib/queries/
+  swr-time.queries.ts             ← Server function — returns same shape as API route, uses connection()
+
+types/
+  swr-time.ts                     ← TimeData type — separated from "use server" file
+```
+
+[Official Docs](https://nextjs.org/docs/app/guides/single-page-applications#spas-with-swr)
+
+</details>
+
+---
+
+<details>
 <summary><strong>28. Catch-all and Optional Catch-all Routes</strong> - Dynamic route segments for flexible URL patterns ([...slug] vs [[...slug]])</summary>
 
 ### Core Concepts
